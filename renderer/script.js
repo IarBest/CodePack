@@ -470,17 +470,17 @@ const updateOutputFilename = async () => {
     const outputPathEl = document.getElementById('outputPath');
     let baseName = outputPathEl.value || 'codepack_output.txt';
 
-    // Удаляем старые добавки, чтобы не дублировались
-    baseName = baseName.replace(/ - .*/, ''); // Удаляем всё после " - "
+    const extIndex = baseName.lastIndexOf('.');
+    let nameWithoutExt = extIndex !== -1 ? baseName.substring(0, extIndex) : baseName;
+    const extension = extIndex !== -1 ? baseName.substring(extIndex) : '';
+
+    // Удаляем старые добавки: временную метку и комментарий
+    nameWithoutExt = nameWithoutExt.replace(/\s-\s.*$/, '');
+    nameWithoutExt = nameWithoutExt.replace(/\s*\[.*?\]\s*$/, '');
 
     const addTimestamp = document.getElementById('addTimestamp').checked;
     const comment = document.getElementById('filenameComment').value.trim();
-    
-    let finalName = baseName;
-    const extIndex = finalName.lastIndexOf('.');
-    const nameWithoutExt = extIndex !== -1 ? finalName.substring(0, extIndex) : finalName;
-    const extension = extIndex !== -1 ? finalName.substring(extIndex) : '';
-    
+
     let additions = '';
     if (addTimestamp) {
         additions += ` - ${await formatTimestampForFilename(new Date())}`;
