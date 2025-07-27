@@ -64,6 +64,7 @@ const dateFormats = [
 function createMenu(store, win) {
   const currentLang = store.get('language', 'ru');
   const currentFormat = store.get('ui.dateFormat', 'dd-mm-yyyy');
+  const currentTheme = store.get('ui.theme', 'dark');
   const formatSubmenu = dateFormats.map(format => ({
     label: t(format.labelKey),
     type: 'radio',
@@ -74,6 +75,27 @@ function createMenu(store, win) {
       // Для мгновенного обновления можно было бы вызвать createMenu снова, но это не критично.
     }
   }));
+
+  const themeSubmenu = [
+    {
+      label: t('menu_theme_light'),
+      type: 'radio',
+      checked: currentTheme === 'light',
+      click: () => {
+        store.set('ui.theme', 'light');
+        win.webContents.send('theme-changed', 'light');
+      }
+    },
+    {
+      label: t('menu_theme_dark'),
+      type: 'radio',
+      checked: currentTheme === 'dark',
+      click: () => {
+        store.set('ui.theme', 'dark');
+        win.webContents.send('theme-changed', 'dark');
+      }
+    }
+  ];
 
   const menuTemplate = [
     {
@@ -96,6 +118,10 @@ function createMenu(store, win) {
     {
         label: t('menu_format'), // Используем ключ из локализации
         submenu: formatSubmenu
+    },
+    {
+        label: t('menu_theme'),
+        submenu: themeSubmenu
     },
     {
         label: t('menu_dev'),

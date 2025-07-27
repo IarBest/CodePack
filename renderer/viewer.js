@@ -1,6 +1,10 @@
 // Управляет всем, что связано с просмотрщиком кода
 
-import {EditorState, EditorView, basicSetup, javascript, oneDark} from './codemirror-bundle.js';
+import {EditorState, EditorView, basicSetup, javascript, oneDark, Compartment} from './codemirror-bundle.js';
+
+const themeCompartment = new Compartment();
+
+let currentTheme = 'dark';
 
 const createEditor = (parent, doc, onChange) => {
   return new EditorView({
@@ -9,7 +13,7 @@ const createEditor = (parent, doc, onChange) => {
       extensions: [
         basicSetup,
         javascript(),
-        oneDark,
+        themeCompartment.of(currentTheme === 'dark' ? oneDark : []),
         EditorView.updateListener.of((v) => {
           if (v.docChanged && typeof onChange === 'function') {
             onChange(v.state.doc.toString());
@@ -37,12 +41,15 @@ const CodeViewer = {
     viewMode: 'all',
     fileObserver: null,
     editors: [],
-    currentEditor: null
+    currentEditor: null,
+    theme: 'dark'
   },
 
   onFileDroppedOrSelected: null,
 
   init(options) {
+    currentTheme = options.theme || 'dark';
+    this.state.theme = currentTheme;
     this.elements.container = document.getElementById('viewer-container');
     this.elements.header = document.getElementById('viewer-header');
     this.elements.filePath = document.getElementById('viewer-file-path');
@@ -163,6 +170,7 @@ updateActiveHighlight(filePath) {
 
         const view = createEditor(editorWrap, file.content, c => file.content = c);
         this.state.editors.push(view);
+        if (this.state.editors.length === 1) view.focus();
 
         this.elements.content.appendChild(block);
     });
@@ -188,6 +196,7 @@ updateActiveHighlight(filePath) {
 
     const fileBlocks = this.elements.content.querySelectorAll('.viewer-file-block');
     fileBlocks.forEach(block => this.state.fileObserver.observe(block));
+    this.elements.content.focus();
   },
 
 showFile(index) {
@@ -218,6 +227,7 @@ showFile(index) {
       view.scrollDOM.addEventListener('scroll', () => {
           file.scrollPosition = view.scrollDOM.scrollTop;
       });
+      view.focus();
       this.updateHeaderUI();
   },
 
@@ -275,7 +285,7 @@ showFile(index) {
     }
   },
 
-navigateTo(filePath) {
+  navigateTo(filePath) {
     this.updateActiveHighlight(filePath); // Обновляем подсветку немедленно
 
     const fileBlock = this.elements.content.querySelector(`.viewer-file-block[data-path="${CSS.escape(filePath)}"]`);
@@ -292,6 +302,16 @@ navigateTo(filePath) {
             this.showFile(fileIndex);
         }
     }
+  },
+
+  setTheme(theme) {
+    if (this.state.theme === theme) return;
+    this.state.theme = theme;
+    currentTheme = theme;
+    const ext = theme === 'dark' ? oneDark : [];
+    const effect = themeCompartment.reconfigure(ext);
+    this.state.editors.forEach(v => v.dispatch({ effects: effect }));
+    if (this.state.currentEditor) this.state.currentEditor.dispatch({ effects: effect });
   },
 
   updateUiForLanguage(t) {

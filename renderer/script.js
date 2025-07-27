@@ -355,8 +355,9 @@ const saveSetting = (element) => {
   }
 };
 
-const setupEventListeners = () => {
-	CodeViewer.init({
+const setupEventListeners = (theme) => {
+        CodeViewer.init({
+    theme,
     onFileDroppedOrSelected: async (files) => {
         let filePath = null;
         if (files && files.length > 0) {
@@ -844,7 +845,9 @@ const updateOutputFilename = async () => {
     await applyTranslations(await window.api.getTranslations());
     await loadSettings();
     alternateFlagsState = (await window.api.getConfig('ui.alternateFlags')) || {};
-    setupEventListeners();
+    const theme = await window.api.getConfig('ui.theme', 'dark');
+    setupEventListeners(theme);
+    window.api.onThemeChanged((th) => CodeViewer.setTheme(th));
     document.querySelectorAll('.setting-item textarea').forEach(autoResizeTextarea);
     const lastPaths = await window.api.getConfig('merge.lastUsedPaths');
     if (lastPaths && lastPaths.length > 0) {
