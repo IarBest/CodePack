@@ -24593,5 +24593,6 @@ export {
   EditorView,
   basicSetup,
   javascript,
-  oneDark
+  oneDark,
+  Compartment
 };
