@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="app_title">📦 CodePack</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <h1 data-i18n="app_title">📦 CodePack</h1>
+    <p class="subtitle" data-i18n="subtitle">Упакуйте или распакуйте ваш код для работы с ИИ</p>
+	
+	<div class="lang-selector-container">
+      <div id="lang-selector" class="lang-selector">
+        <span id="lang-selector-label" data-i18n="lang_selector_label">Язык интерфейса</span>
+        <ul id="lang-list"></ul>
+      </div>
+      <img id="lang-flag" class="lang-flag" src="" alt="flag" style="display: none;">
+    </div>
+    
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="merge" data-i18n="merge_tab">Сборка</button>
+      <button class="tab-btn" data-tab="split" data-i18n="split_tab">Разборка</button>
+    </div>
+
+    <div id="merge-tab" class="tab-content active">
+      <div class="merge-grid">
+        <div class="merge-controls">
+          <h3 data-i18n="select_files_header">1. Выберите файлы</h3>
+          <button id="selectFolderBtn" data-i18n="select_folder_btn">Выбрать папку</button>
+          <button id="selectFilesBtn" data-i18n="select_files_btn">Выбрать файлы</button>
+          <div id="drag-drop-zone" class="drag-drop-zone">
+            <p data-i18n="drag_drop_area">Или перетащите файлы и папки сюда</p>
+          </div>
+	       <div class="quick-ignore-settings">
+            <label><input type="checkbox" id="excludeNodeModules" checked> <span data-i18n="exclude_node_modules">Исключать <code>node_modules</code></span></label>
+            <label><input type="checkbox" id="excludeUserData" checked> <span data-i18n="exclude_user_data">Исключать <code>user-data</code></span></label>
+          </div>
+          
+          <h3 data-i18n="settings_header">2. Настройки</h3>
+          <div class="settings">
+            <div class="setting-item">
+              <label for="validExtensions" data-i18n="extensions_label">Расширения файлов:</label>
+              <textarea id="validExtensions" rows="1"></textarea>
+              <button id="restoreExtensions" class="btn-restore-defaults" data-i18n-tooltip="restore_defaults_tooltip">🔄</button>
+            </div>
+            
+            <div class="setting-item">
+              <label for="ignorePatterns" data-i18n="ignore_patterns_label">Игнорировать файлы и папки:</label>
+              <textarea id="ignorePatterns" rows="1"></textarea>
+              <button id="restoreIgnores" class="btn-restore-defaults" data-i18n-tooltip="restore_defaults_tooltip">🔄</button>
+            </div>
+
+            <div class="setting-item">
+              <label><input type="checkbox" id="useAbsolutePaths"> <span data-i18n="use_absolute_paths_label">Включать в отчёт абсолютные пути</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="merge-preview">
+          <div class="preview-header">
+            <h3><span data-i18n="files_for_merge_header">3. Файлы для сборки</span> <span id="file-count">(0 файлов)</span></h3>
+            <div class="tree-controls">
+              <button id="expandAllBtn" class="btn-tree-action" data-i18n="expand_all_btn" data-i18n-tooltip="expand_all_tooltip">Развернуть всё</button>
+              <button id="collapseAllBtn" class="btn-tree-action" data-i18n="collapse_all_btn" data-i18n-tooltip="collapse_all_tooltip">Свернуть всё</button>
+              <button id="clearFileListBtn" class="btn-clear-list" data-i18n="clear_btn" data-i18n-tooltip="clear_list_tooltip">Очистить</button>
+            </div>
+          </div>
+          <div id="file-list-container" class="file-list-container">
+            <p class="placeholder" data-i18n="files_placeholder">Здесь появится список выбранных файлов...</p>
+          </div>
+		  <div id="sticky-separator" data-i18n="sticky_separator_text">Перейти к исключенным файлам ↓</div>
+          <div class="output-section">
+            <h3 data-i18n="result_header">4. Результат</h3>
+            <div class="setting-item" style="margin-top: 5px; margin-bottom: 10px;">
+              <label><input type="checkbox" id="addTimestamp"> <span data-i18n="add_timestamp_label">Добавлять в имя файла дату и время</span></label>
+            </div>
+<div class="setting-item" style="margin-bottom: 10px;">
+  <label for="filenameComment" data-i18n="filename_comment_label">Комментарий к имени файла:</label>
+  <input type="text" id="filenameComment" data-i18n-placeholder="filename_comment_placeholder">
+</div>
+            <div class="output-path-wrapper">
+              <input type="text" id="outputPath" data-i18n-placeholder="output_path_placeholder">
+              <button id="selectOutputPathBtn" data-i18n-tooltip="select_output_path_tooltip">...</button>
+            </div>
+            <div class="setting-item" style="margin-top: 15px; margin-bottom: 0;">
+              <label><input type="checkbox" id="closeOnComplete"> <span data-i18n="close_on_complete_label">По завершению закрывать программу</span></label>
+            </div>
+            <button id="mergeBtn" class="primary-btn" data-i18n="merge_btn">Объединить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <div id="split-tab" class="tab-content">
+      <div class="split-grid">
+        <div class="split-controls">
+  <h3 data-i18n="split_input_header">1. Вставьте код или выберите файл</h3>
+
+  <div id="viewer-drop-zone" class="drag-drop-zone">
+    <p data-i18n="viewer_drop_zone_text">Перетащите собранный файл сюда</p>
+    <p style="margin-top: 5px;" data-i18n="viewer_drop_zone_or">- или -</p>
+    <button id="selectSplitFileBtn" data-i18n="select_split_file_btn">Выберите файл с диска...</button>
+  </div>
+
+<div id="viewer-container" class="viewer-container" style="display: none;">
+    <div id="viewer-header" class="viewer-header">
+      <div id="viewer-file-path" class="viewer-file-path" data-i18n-placeholder="viewer_file_path_placeholder">
+        Имя файла появится здесь...
+      </div>
+    </div>
+    <div id="viewer-toolbar" class="viewer-toolbar">
+      <div id="viewer-nav-buttons" class="viewer-nav-buttons">
+         <button id="selectNewFileBtn" data-i18n-tooltip="select_split_file_btn">📂</button>
+         <button id="viewer-prev-btn" data-i18n-tooltip="viewer_prev_file_tooltip">▲</button>
+         <button id="viewer-next-btn" data-i18n-tooltip="viewer_next_file_tooltip">▼</button>
+      </div>
+      <div id="viewer-actions" class="viewer-actions">
+        <button id="viewer-toggle-mode-btn" data-i18n-tooltip="viewer_toggle_mode_tooltip">📚</button>
+        <button id="viewer-search-btn" data-i18n-tooltip="viewer_search_tooltip">🔍</button>
+        <button id="viewer-fullscreen-btn" data-i18n-tooltip="viewer_fullscreen_tooltip">⛶</button>
+      </div>
+    </div>
+    <div id="viewer-content" class="viewer-content"></div>
+  </div>
+
+  <div class="settings" style="margin-top: 20px;">
+    <p data-i18n="delimiters_settings_label">Настройки разделителей:</p>
+    <div class="delimiters">
+      <label><span data-i18n="delimiter_start_label">Начало:</span> <input type="text" id="startDelimiter" value="//======= FILE: "></label>
+      <label><span data-i18n="delimiter_end_label">Конец:</span> <input type="text" id="endDelimiter" value=" ======="></label>
+    </div>
+  </div>
+</div>
+
+        <div class="split-preview">
+          <div class="preview-header">
+            <h3><span data-i18n="files_for_split_header">2. Файлы для разборки</span> <span id="split-file-count">(0 файлов)</span></h3>
+            <div class="tree-controls">
+                <button id="splitClearBtn" class="btn-clear-list" data-i18n="clear_btn">Очистить</button>
+            </div>
+          </div>
+          <div id="split-file-list-container" class="file-list-container">
+            <p class="placeholder" data-i18n="split_files_placeholder">Здесь появится структура файлов...</p>
+          </div>
+          <button id="splitBtn" class="primary-btn" data-i18n="split_btn">Разобрать выбранные файлы в папку...</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-help">
+      <button id="copyAITemplateBtn" data-i18n="copy_ai_template_btn">Скопировать шаблон для ИИ</button>
+    </div>
+
+  </div>
+
+  <div id="loader" class="loader-overlay" style="display: none;">
+    <div class="loader-spinner"></div>
+    <p data-i18n="loader_text">Обработка...</p>
+  </div>
+  
+  <div id="toast-container"></div>
+  
+  <script src="codemirror-bundle.js"></script>
+  <script src="viewer.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

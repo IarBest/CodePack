@@ -1,0 +1,881 @@
+/* Глобальные переменные и стили */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
+  --success-color: #27ae60;
+  --light-gray: #ecf0f1;
+  --border-color: #bdc3c7;
+  --text-color: #333;
+  --bg-color: #f4f6f9;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  margin: 0;
+  padding: 20px;
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 850px;
+  margin: 0 auto;
+  background: white;
+  padding: 25px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+  color: var(--secondary-color);
+  text-align: center;
+  margin: 0 0 5px 0;
+  font-size: 2.5em;
+}
+
+.subtitle {
+  text-align: center;
+  margin-top: 0;
+  color: #7f8c8d;
+  margin-bottom: 25px;
+}
+
+/* Вкладки */
+.tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--light-gray);
+}
+
+.tab-btn {
+  padding: 12px 25px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #7f8c8d;
+  font-size: 1em;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--primary-color);
+}
+
+.tab-btn.active {
+  color: var(--secondary-color);
+  border-bottom: 3px solid var(--primary-color);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Общие стили для форм */
+button {
+  background-color: #e1e5e8;
+  color: #333;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  background-color: #d1d5d8;
+}
+
+button.primary-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+button.primary-btn:hover { background-color: #2980b9; }
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input[type="text"],
+input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="text"]:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Сборка */
+.merge-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 25px;
+  overflow: hidden;
+}
+
+.merge-preview {
+    min-width: 0;
+	 position: relative;
+}
+
+.merge-controls h3, .preview-header h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--secondary-color);
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--light-gray);
+  padding-bottom: 8px;
+}
+
+.preview-header #file-count {
+  color: #7f8c8d;
+  font-weight: normal;
+  font-size: 0.9em;
+}
+
+.btn-clear-list {
+  background: none;
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+  font-size: 0.8em;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.btn-clear-list:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+
+.drag-drop-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  color: #95a5a6;
+  margin-top: 15px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.drag-drop-zone.drag-over {
+  background-color: rgba(52, 152, 219, 0.1);
+  border-color: var(--primary-color);
+}
+
+.settings label {
+  display: block;
+  font-weight: 600;
+  margin: 15px 0 5px 0;
+}
+
+/* Стили для многострочных полей и кнопок сброса */
+.setting-item {
+    position: relative;
+    margin-bottom: 10px;
+}
+.setting-item label {
+  margin: 0 0 5px 0;
+}
+
+.setting-item textarea {
+    width: 100%;
+    padding: 10px;
+    padding-right: 25px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-sizing: border-box;
+    resize: vertical;
+    /* Увеличиваем минимальную высоту */
+    min-height: 54px;
+    line-height: 1.5;
+    overflow-y: hidden;
+}
+
+.btn-restore-defaults {
+    position: absolute;
+    top: 32px;
+    right: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: #95a5a6;
+    padding: 2px 5px;
+    opacity: 0.7;
+}
+.btn-restore-defaults:hover {
+    opacity: 1;
+    color: var(--primary-color);
+}
+
+/* Дерево файлов */
+.file-list-container {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  height: 280px;
+  overflow: auto;
+  padding: 10px;
+  background: #fdfdfd;
+}
+.file-list-container .placeholder {
+  color: #95a5a6;
+  text-align: center;
+  padding-top: 50px;
+}
+
+.file-tree ul {
+  list-style-type: none;
+  padding-left: 18px;
+}
+.file-tree li { padding: 3px 0; }
+
+.tree-item-content {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+.tree-item-content:hover {
+  background-color: var(--light-gray);
+}
+
+.tree-item-content input[type="checkbox"] { margin-right: 8px; }
+.tree-item-content .icon {
+  width: 24px;
+  display: inline-block;
+  text-align: center;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-weight: bold;
+}
+
+.tree-item-content .name { user-select: none; }
+li.collapsed > ul { display: none; }
+
+/* Иконки файлов */
+.icon[data-ext=".js"], .icon[data-ext=".jsx"] { color: #f7df1e; }
+.icon[data-ext=".ts"], .icon[data-ext=".tsx"] { color: #3178c6; }
+.icon[data-ext=".html"] { color: #e34c26; }
+.icon[data-ext=".css"], .icon[data-ext=".scss"] { color: #563d7c; }
+.icon[data-ext=".json"] { color: #f1e05a; }
+.icon[data-ext=".md"] { color: #083fa1; }
+.icon[data-ext=".py"] { color: #3572A5; }
+
+/* Секция вывода */
+.output-section { margin-top: 20px; }
+.output-path-wrapper { display: flex; }
+.output-path-wrapper input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  width: 100%;
+  box-sizing: border-box;
+  /* Добавляем отступ слева */
+  padding-left: 10px;
+}
+.output-path-wrapper button {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  width: 45px;
+  flex-shrink: 0;
+}
+#mergeBtn { width: 100%; margin-top: 10px; padding: 12px; }
+
+/* Разборка */
+#splitInput { height: 250px; resize: vertical; }
+.delimiters {
+  display: flex;
+  flex-direction: column; /* Ставим элементы в колонку */
+  gap: 10px; /* Добавляем отступ между ними */
+  margin-bottom: 15px;
+}
+.delimiters label {
+  flex-grow: 1;
+  display: flex; /* Для выравнивания текста и поля ввода */
+  align-items: center;
+  gap: 5px;
+}
+.delimiters label span {
+  flex-basis: 60px; /* Фиксируем ширину текста "Начало:" / "Конец:" */
+  flex-shrink: 0;
+}
+.delimiters label input {
+  width: 100%; /* Поле ввода занимает всю оставшуюся ширину */
+}
+#splitBtn { width: 100%; padding: 12px; }
+
+/* Помощь ИИ */
+.ai-help {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid var(--light-gray);
+  text-align: center;
+}
+.ai-help button {
+  background-color: var(--success-color);
+  color: white;
+}
+.ai-help button:hover { background-color: #219653; }
+
+/* Загрузчик */
+.loader-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.loader-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: var(--primary-color);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+.loader-overlay p {
+  margin-top: 15px;
+  font-weight: 600;
+  color: var(--secondary-color);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Стили для доработок от 14.07.2025 --- */
+
+/* Контейнер для быстрых галочек игнорирования */
+.quick-ignore-settings {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border: 1px solid var(--light-gray);
+  border-radius: 6px;
+}
+.quick-ignore-settings label {
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+  font-weight: normal;
+  cursor: pointer;
+}
+.quick-ignore-settings code {
+  background-color: #e9ecef;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  margin-left: 5px;
+}
+
+/* Иконка для сворачивания/разворачивания папок */
+.toggle-icon {
+  width: auto; /* Автоматическая ширина */
+  text-align: center;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-weight: bold;
+  color: var(--primary-color);
+  cursor: pointer;
+  user-select: none; /* Запрещаем выделение текста [+] / [-] */
+  padding: 2px 8px; /* <<< ДОБАВЛЕНО: Увеличиваем зону клика */
+  margin: -2px 0; /* Компенсируем отступы, чтобы не разъезжалась верстка */
+  border-radius: 4px; /* Скругляем углы для лучшего вида */
+  transition: background-color 0.15s ease;
+}
+.toggle-icon:hover {
+    background-color: #eaf5fc;
+}
+
+/* Линия-разделитель между активными и неактивными файлами */
+.separator-line {
+  height: 0; /* Высота не нужна, рисовать будет рамка */
+  border-top: 3px solid var(--border-color); /* Рисуем четкую линию сверху */
+  margin: 8px 0 8px 20px; /* Отступ слева, чтобы линия не начиналась с края */
+  list-style: none; /* Убираем маркер списка */
+}
+
+/* Применяем стили к иконкам, только если они внутри дерева файлов */
+.file-tree .icon {
+  width: 24px;
+  display: inline-block;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Стиль для исключенного элемента дерева */
+.tree-item.is-excluded > .tree-item-content {
+  opacity: 0.5;
+  /* Можно добавить зачеркивание, если захочется */
+  /* text-decoration: line-through; */ 
+}
+
+/* Убираем ховер-эффект для исключенных элементов, чтобы не сбивать с толку */
+.tree-item.is-excluded > .tree-item-content:hover {
+    background-color: transparent;
+}
+
+/* Стили для кнопок управления деревом */
+.tree-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-tree-action {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--secondary-color);
+  font-size: 0.8em;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.btn-tree-action:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: #f0f8ff;
+}
+
+/* Новый блок для анимации "вырастания" */
+#sticky-separator {
+  /* Позиционирование */
+  position: absolute;
+  bottom: 268px;
+  left: 1px;
+  right: 17px;
+  
+  /* Свойства для плавной анимации */
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+  overflow: hidden; /* Прячем текст, который не помещается */
+  white-space: nowrap; /* Запрещаем перенос текста во время анимации */
+  
+  /* Изначально полоса полностью невидима */
+  opacity: 0;
+  pointer-events: none;
+  
+  /* Общие стили для обоих состояний */
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--secondary-color);
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Класс .visible делает полоску видимой, но в "сжатом" состоянии */
+#sticky-separator.visible {
+  opacity: 1;
+  pointer-events: auto;
+  height: 10px; /* Начальная высота в 10px */
+  padding: 0; /* Убираем отступы, чтобы скрыть текст */
+  font-size: 0; /* Прячем текст */
+  background-color: #e0e0e0; /* Серый цвет для полоски */
+  border: 1px solid #c_c_c;
+}
+
+/* При наведении мыши плавно возвращаем её к "полному" размеру */
+#sticky-separator.visible:hover {
+  height: 38px; /* Полная высота, как у кнопки */
+  padding: 8px; /* Возвращаем отступы */
+  font-size: 1em; /* Показываем текст */
+  background-color: #f8f9fa; /* Возвращаем исходный фон */
+  border: 1px solid var(--border-color);
+}
+
+/* --- Стили для новой вкладки "Разборка" --- */
+
+.split-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr; /* Колонки как на первой вкладке */
+  gap: 25px;
+}
+
+#split-file-list-container .tree-item-content {
+  padding-top: 4px;    /* Делаем "подушку" сверху в 4 пикселя */
+  padding-bottom: 4px; /* и снизу в 4 пикселя */
+  margin-top: -2px;    /* Притягиваем элемент на 2 пикселя вверх */
+  margin-bottom: -2px; /* и на 2 пикселя вниз */
+  border-radius: 4px;  /* Скруглим углы для красоты при наведении */
+}
+
+#selectSplitFileBtn {
+  width: 100%;
+  margin-top: 10px;
+}
+
+#splitInput {
+  height: 280px; /* Увеличим высоту по умолчанию */
+  resize: vertical;
+}
+
+#splitInput.drag-over {
+  background-color: rgba(52, 152, 219, 0.1);
+  border-color: var(--primary-color);
+}
+
+#split-file-list-container {
+  height: 355px; /* Высота дерева файлов */
+}
+
+#splitBtn {
+  width: 100%; 
+  margin-top: 15px; 
+  padding: 12px;
+}
+
+/* Стили для кнопок "Копировать" и "Сохранить" в дереве */
+.file-actions {
+  margin-left: auto; /* Прижимаем к правому краю */
+  display: none; /* Прячем по умолчанию */
+  gap: 8px;
+  padding-right: 5px;
+}
+
+/* Показываем кнопки при наведении на всю строку */
+.tree-item-content:hover .file-actions {
+  display: flex;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1em;
+  color: #7f8c8d;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.action-btn:hover {
+  color: var(--primary-color);
+  background-color: #eaf5fc;
+}
+
+/* --- Стили для просмотрщика кода (Этап 3) --- */
+
+#viewer-drop-zone {
+  margin-top: 0;
+  padding: 30px;
+}
+
+#viewer-drop-zone button {
+  margin-top: 10px;
+}
+
+.viewer-container {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  height: 380px; /* Высота всего блока */
+  display: flex;
+  flex-direction: column;
+  background: #fdfdfd;
+}
+
+.viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background-color: var(--light-gray);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0; /* Заголовок не должен сжиматься */
+}
+
+.viewer-nav-buttons, .viewer-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.viewer-header button {
+  background: none;
+  border: 1px solid transparent;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 1.2em;
+  line-height: 1;
+  color: var(--secondary-color);
+  transition: all 0.2s ease;
+}
+
+.viewer-header button:hover {
+  border-color: var(--border-color);
+  background-color: white;
+}
+
+.viewer-file-path {
+  flex-grow: 1;
+  text-align: center;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Добавляем многоточие если путь не влезает */
+  padding: 0 10px;
+}
+
+.viewer-content {
+  flex-grow: 1;
+  overflow: auto; /* Позволяет прокручивать содержимое */
+  padding: 10px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #222;
+}
+
+.viewer-container {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  height: 380px;
+  display: flex;
+  flex-direction: column;
+  background: #fdfdfd;
+}
+
+.viewer-header {
+  padding: 8px 12px;
+  background-color: #f8f9fa; /* Чуть другой фон для отделения */
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  text-align: left; /* Выравниваем путь по левому краю */
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background-color: var(--light-gray);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.viewer-toolbar .viewer-nav-buttons, 
+.viewer-toolbar .viewer-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.viewer-toolbar button {
+  background: none;
+  border: 1px solid transparent;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 1.2em;
+  line-height: 1;
+  color: var(--secondary-color);
+  transition: all 0.2s ease;
+}
+
+.viewer-toolbar button:hover {
+  border-color: var(--border-color);
+  background-color: white;
+}
+
+/* Старые стили больше не нужны, удаляем их */
+.viewer-file-path {
+  /* Все стили переехали в .viewer-header */
+}
+
+/* Очищаем старый viewer-header, чтобы не было конфликтов */
+.viewer-header {
+  /* Переопределено выше */
+}
+
+/* --- Стили для выбора языка в заголовке --- */
+.lang-selector-container {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lang-selector {
+  position: relative;
+  cursor: pointer;
+}
+
+.lang-selector span {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #000;
+  font-weight: normal;
+  font-size: 15px; /* Как у subtitle */
+}
+
+.lang-selector ul {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  list-style: none;
+  padding: 5px 0;
+  margin: 5px 0 0 0;
+  z-index: 100;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.lang-selector.open ul {
+  display: block;
+}
+
+.lang-selector ul li {
+  padding: 8px 20px;
+  white-space: nowrap;
+}
+
+.lang-selector ul li:hover {
+  background-color: var(--light-gray);
+}
+
+.lang-flag {
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  cursor: default;
+  user-select: none;
+}
+
+/* Улучшение поля для комментария */
+#filenameComment {
+  width: 100%; /* Заставляет поле занять всю ширину родительского блока */
+  box-sizing: border-box; /* Важно, чтобы отступы не ломали верстку */
+  padding-left: 10px; /* Сделаем отступ, как у других полей */
+}
+
+/* Расширяем кликабельную область для имени файла в списке разборки */
+#split-file-list-container .tree-item-content .name {
+  flex-grow: 1;
+}
+
+/* Выравниваем заголовок на вкладке "Разборка" */
+.split-controls h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--secondary-color);
+}
+
+/* Стили для интеграции CodeMirror */
+.viewer-content {
+  flex-grow: 1;
+  overflow: hidden; /* CodeMirror сам управляет скроллом */
+  padding: 0; /* Убираем внутренние отступы, чтобы редактор прилегал к краям */
+  font-size: 14px; /* Базовый размер шрифта для редактора */
+}
+
+.cm-editor {
+  height: 100%;
+  outline: none; /* Убираем стандартную рамку фокуса */
+  font-size: 13px; /* Оптимальный размер шрифта для кода */
+}
+
+/* Стили для панели поиска CodeMirror */
+.cm-search {
+    background-color: #3a404b;
+    color: white;
+    border: 1px solid #282c34;
+}
+
+.cm-search input {
+    background-color: #21252b;
+    color: white;
+    border: 1px solid #5c6370;
+}
+
+.cm-search button {
+    background-color: #5c6370;
+    color: white;
+    border: 1px solid transparent;
+}
+.cm-search button:hover {
+    background-color: #6c7380;
+}
+
+/* --- Стиль для активного элемента в дереве разборки --- */
+#split-file-list-container .tree-item.is-active > .tree-item-content {
+  background-color: #eaf5fc; /* Светло-голубой фон */
+  font-weight: 600;
+}
+#split-file-list-container .tree-item.is-active > .tree-item-content .name {
+  color: var(--primary-color);
+}
+
+/* --- Стили для уведомлений (тостов) --- */
+#toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.toast-message {
+  padding: 15px 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.4s ease-in-out;
+  white-space: pre-wrap; /* Позволяет переносить строки по \n */
+}
+
+.toast-message.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast-message.success {
+  background-color: var(--success-color);
+}
+
+.toast-message.error {
+  background-color: #e74c3c;
+}
+
+.toast-message.info {
+  background-color: var(--primary-color);
+}
+
+}

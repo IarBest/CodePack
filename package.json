@@ -1,0 +1,26 @@
+{
+  "name": "code-pack",
+  "version": "1.1.0",
+  "description": "A tool to merge and split code files for easy use with AI assistants.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "electron",
+    "ai",
+    "code",
+    "tools"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/view": "^6.38.1",
+    "codemirror": "^6.0.2",
+    "electron": "^29.1.0",
+    "electron-store": "^10.1.0"
+  }
+}
