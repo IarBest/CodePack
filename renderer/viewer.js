@@ -1,10 +1,8 @@
 // Управляет всем, что связано с просмотрщиком кода
 
-import {EditorState} from '../node_modules/@codemirror/state/dist/index.js';
-import {EditorView} from '../node_modules/@codemirror/view/dist/index.js';
-import {javascript} from '../node_modules/@codemirror/lang-javascript/dist/index.js';
-import {oneDark} from '../node_modules/@codemirror/theme-one-dark/dist/index.js';
-import {basicSetup} from '../node_modules/codemirror/dist/index.js';
+import {EditorState, EditorView, basicSetup} from './codemirror-bundle.js';
+import {javascript} from './lang-javascript.js';
+import {oneDark} from './theme-one-dark.js';
 
 const createEditor = (parent, doc, onChange) => {
   return new EditorView({
@@ -303,9 +301,7 @@ navigateTo(filePath) {
 
     this.elements.prevBtn.title = t('viewer_prev_file_tooltip');
     this.elements.nextBtn.title = t('viewer_next_file_tooltip');
-    this.elements.toggleModeBtn.title = this.state.viewMode === 'single'
-        ? t('viewer_toggle_mode_tooltip_all') // Нужны будут новые строки в локализации
-        : t('viewer_toggle_mode_tooltip_single');
+    this.elements.toggleModeBtn.title = t('viewer_toggle_mode_tooltip');
     this.elements.searchBtn.title = t('viewer_search_tooltip');
     this.elements.fullscreenBtn.title = t('viewer_fullscreen_tooltip');
   }
