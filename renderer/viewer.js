@@ -1,8 +1,6 @@
 // Управляет всем, что связано с просмотрщиком кода
 
-import {EditorState, EditorView, basicSetup} from './codemirror-bundle.js';
-import {javascript} from './lang-javascript.js';
-import {oneDark} from './theme-one-dark.js';
+import {EditorState, EditorView, basicSetup, javascript, oneDark} from './codemirror-bundle.js';
 
 const createEditor = (parent, doc, onChange) => {
   return new EditorView({
