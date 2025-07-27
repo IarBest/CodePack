@@ -190,12 +190,20 @@ updateActiveHighlight(filePath) {
             this.elements.filePath.textContent = filePath;
             this.elements.filePath.title = filePath;
             this.updateActiveHighlight(filePath);
+            this.updateNavButtons();
         }
       }
     }, observerOptions);
 
     const fileBlocks = this.elements.content.querySelectorAll('.viewer-file-block');
     fileBlocks.forEach(block => this.state.fileObserver.observe(block));
+    if (fileBlocks.length > 0) {
+      const firstPath = fileBlocks[0].dataset.path;
+      this.elements.filePath.textContent = firstPath;
+      this.elements.filePath.title = firstPath;
+      this.updateActiveHighlight(firstPath);
+      this.updateNavButtons();
+    }
     this.elements.content.focus();
   },
 
@@ -233,12 +241,11 @@ showFile(index) {
 
   updateHeaderUI() {
       if (this.state.viewMode === 'all') {
-          this.elements.filePath.textContent = 'Режим потока';
-          this.elements.filePath.title = 'Все файлы в одном окне';
-          this.elements.prevBtn.style.display = 'none';
-          this.elements.nextBtn.style.display = 'none';
+          this.elements.prevBtn.style.display = 'block';
+          this.elements.nextBtn.style.display = 'block';
           this.elements.toggleModeBtn.textContent = '📄';
           this.elements.toggleModeBtn.title = 'Переключить в режим одного файла';
+          this.updateNavButtons();
       } else {
           this.elements.prevBtn.style.display = 'block';
           this.elements.nextBtn.style.display = 'block';
@@ -251,15 +258,31 @@ showFile(index) {
   },
 
   updateNavButtons() {
-    this.elements.prevBtn.disabled = this.state.currentFileIndex <= 0;
-    this.elements.nextBtn.disabled = this.state.currentFileIndex >= this.state.files.length - 1;
+    if (this.state.viewMode === 'single') {
+      this.elements.prevBtn.disabled = this.state.currentFileIndex <= 0;
+      this.elements.nextBtn.disabled = this.state.currentFileIndex >= this.state.files.length - 1;
+    } else {
+      const currentPath = this.elements.filePath.textContent;
+      const blocks = Array.from(this.elements.content.querySelectorAll('.viewer-file-block'));
+      const currentIndex = blocks.findIndex(b => b.dataset.path === currentPath);
+      this.elements.prevBtn.disabled = currentIndex <= 0;
+      this.elements.nextBtn.disabled = currentIndex === -1 || currentIndex >= blocks.length - 1;
+    }
   },
 
   prevFile() {
-    this.showFile(this.state.currentFileIndex - 1);
+    if (this.state.viewMode === 'all') {
+      this.scrollToPrevFile();
+    } else {
+      this.showFile(this.state.currentFileIndex - 1);
+    }
   },
   nextFile() {
-    this.showFile(this.state.currentFileIndex + 1);
+    if (this.state.viewMode === 'all') {
+      this.scrollToNextFile();
+    } else {
+      this.showFile(this.state.currentFileIndex + 1);
+    }
   },
 
   // Новые методы для прокрутки в режиме потока
