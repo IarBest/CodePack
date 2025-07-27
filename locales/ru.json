@@ -49,6 +49,7 @@
   "files_for_split_header": "2. Файлы для разборки",
   "split_files_placeholder": "Здесь появится структура файлов...",
   "split_btn": "Разобрать выбранные файлы в папку...",
+  "rebuild_btn": "Пересобрать в файл...",
   "copy_ai_template_btn": "Скопировать шаблон для ИИ",
   "loader_text": "Обработка...",
   "copy_content_tooltip": "Копировать содержимое",

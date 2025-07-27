@@ -48,6 +48,7 @@
   "files_for_split_header": "2. Fișiere pentru separare",
   "split_files_placeholder": "Structura fișierelor va apărea aici...",
   "split_btn": "Separă fișierele selectate într-un dosar...",
+  "rebuild_btn": "Reconstruiește într-un fișier...",
   "copy_ai_template_btn": "Copiați șablonul pentru AI",
   "loader_text": "Procesare...",
   "alt_flag_file": "md.png",

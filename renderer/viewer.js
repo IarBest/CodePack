@@ -1,5 +1,30 @@
 // Управляет всем, что связано с просмотрщиком кода
 
+import {EditorState} from '../node_modules/@codemirror/state/dist/index.js';
+import {EditorView} from '../node_modules/@codemirror/view/dist/index.js';
+import {javascript} from '../node_modules/@codemirror/lang-javascript/dist/index.js';
+import {oneDark} from '../node_modules/@codemirror/theme-one-dark/dist/index.js';
+import {basicSetup} from '../node_modules/codemirror/dist/index.js';
+
+const createEditor = (parent, doc, onChange) => {
+  return new EditorView({
+    state: EditorState.create({
+      doc,
+      extensions: [
+        basicSetup,
+        javascript(),
+        oneDark,
+        EditorView.updateListener.of((v) => {
+          if (v.docChanged && typeof onChange === 'function') {
+            onChange(v.state.doc.toString());
+          }
+        })
+      ]
+    }),
+    parent
+  });
+};
+
 const CodeViewer = {
   elements: {
     container: null, header: null, filePath: null, content: null,
@@ -15,6 +40,8 @@ const CodeViewer = {
     currentFileIndex: -1,
     viewMode: 'all',
     fileObserver: null,
+    editors: [],
+    currentEditor: null
   },
 
   onFileDroppedOrSelected: null,
@@ -92,6 +119,12 @@ updateActiveHighlight(filePath) {
 
   loadContent(parsedFiles) {
   this.updateActiveHighlight(null);
+  this.state.editors.forEach(ed => ed.destroy());
+  this.state.editors = [];
+  if (this.state.currentEditor) {
+    this.state.currentEditor.destroy();
+    this.state.currentEditor = null;
+  }
     if (parsedFiles) {
         // Добавляем свойство для хранения позиции скролла
         this.state.files = parsedFiles
@@ -118,19 +151,25 @@ updateActiveHighlight(filePath) {
   },
 
   renderAllFiles() {
-    let allContentHTML = '';
+    this.elements.content.innerHTML = '';
     this.state.files.forEach(file => {
-        const pre = document.createElement('pre');
-        pre.textContent = file.content;
+        const block = document.createElement('div');
+        block.className = 'viewer-file-block';
+        block.dataset.path = file.path;
 
-        allContentHTML += `
-            <div class="viewer-file-block" data-path="${file.path}">
-                <div class="viewer-file-block-header">//======= FILE: ${file.path} =======</div>
-                ${pre.outerHTML}
-            </div>
-        `;
+        const header = document.createElement('div');
+        header.className = 'viewer-file-block-header';
+        header.textContent = `//======= FILE: ${file.path} =======`;
+        block.appendChild(header);
+
+        const editorWrap = document.createElement('div');
+        block.appendChild(editorWrap);
+
+        const view = createEditor(editorWrap, file.content, c => file.content = c);
+        this.state.editors.push(view);
+
+        this.elements.content.appendChild(block);
     });
-    this.elements.content.innerHTML = allContentHTML;
     this.elements.content.scrollTop = 0; // Сбрасываем скролл при переключении в режим потока
 
     const observerOptions = {
@@ -167,12 +206,22 @@ showFile(index) {
 
       this.elements.content.innerHTML = '';
 
-      const pre = document.createElement('pre');
-      pre.textContent = file.content;
-      this.elements.content.appendChild(pre);
+      if (this.state.currentEditor) {
+          this.state.currentEditor.destroy();
+          this.state.currentEditor = null;
+      }
 
-      // Восстанавливаем позицию скролла или ставим 0
-      this.elements.content.scrollTop = file.scrollPosition || 0;
+      const editorWrap = document.createElement('div');
+      this.elements.content.appendChild(editorWrap);
+      const view = createEditor(editorWrap, file.content, c => file.content = c);
+      this.state.currentEditor = view;
+
+      if (file.scrollPosition) {
+          view.scrollDOM.scrollTop = file.scrollPosition;
+      }
+      view.scrollDOM.addEventListener('scroll', () => {
+          file.scrollPosition = view.scrollDOM.scrollTop;
+      });
       this.updateHeaderUI();
   },
 
@@ -261,3 +310,5 @@ navigateTo(filePath) {
     this.elements.fullscreenBtn.title = t('viewer_fullscreen_tooltip');
   }
 };
+
+window.CodeViewer = CodeViewer;

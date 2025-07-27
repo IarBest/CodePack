@@ -754,6 +754,27 @@ const updateOutputFilename = async () => {
         showLoader(false);
       }
     });
+
+    document.getElementById('rebuildBtn').addEventListener('click', async () => {
+      if (!CodeViewer.state.files || CodeViewer.state.files.length === 0) {
+        showToast(t('alert_no_files_to_merge'), 'error');
+        return;
+      }
+      const defaultPath = 'repacked.txt';
+      const savedPath = await window.api.showSaveDialog({
+        defaultPath,
+        filters: [{ name: 'Text Files', extensions: ['txt'] }, { name: 'All Files', extensions: ['*'] }]
+      });
+      if (!savedPath) return;
+      const startDel = document.getElementById('startDelimiter').value;
+      const endDel = document.getElementById('endDelimiter').value;
+      let out = '';
+      CodeViewer.state.files.forEach(f => {
+        out += `${startDel}${f.path}${endDel}\n${f.content}\n//======= END FILE =======\n\n`;
+      });
+      await window.api.saveFileContent({ filePath: savedPath, content: out });
+      showToast(t('alert_merge_success_title') + '\n' + t('alert_merge_success_message', {outputPath: savedPath}), 'success');
+    });
     const triggerContextualSave = () => {
         if (document.getElementById('merge-tab').classList.contains('active')) {
             document.getElementById('mergeBtn').click();

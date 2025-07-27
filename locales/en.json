@@ -48,6 +48,7 @@
   "files_for_split_header": "2. Files to split",
   "split_files_placeholder": "The file structure will appear here...",
   "split_btn": "Split selected files into a folder...",
+  "rebuild_btn": "Rebuild to file...",
   "copy_ai_template_btn": "Copy template for AI",
   "loader_text": "Processing...",
   "copy_content_tooltip": "Copy content",
