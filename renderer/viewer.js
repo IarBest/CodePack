@@ -2,6 +2,8 @@
 
 import {EditorState, EditorView, basicSetup, javascript, oneDark, Compartment, openSearchPanel} from './codemirror-bundle.js';
 
+let phrases = {};
+
 const themeCompartment = new Compartment();
 
 let currentTheme = 'dark';
@@ -14,6 +16,7 @@ const createEditor = (parent, doc, onChange) => {
         basicSetup,
         javascript(),
         themeCompartment.of(currentTheme === 'dark' ? oneDark : []),
+        EditorState.phrases.of(phrases),
         EditorView.updateListener.of((v) => {
           if (v.docChanged && typeof onChange === 'function') {
             onChange(v.state.doc.toString());
@@ -26,6 +29,7 @@ const createEditor = (parent, doc, onChange) => {
 };
 
 const CodeViewer = {
+  t: (str) => str,
   elements: {
     container: null, header: null, filePath: null, content: null,
     prevBtn: null, nextBtn: null, dropZone: null, selectFileBtn: null,
@@ -42,7 +46,10 @@ const CodeViewer = {
     fileObserver: null,
     editors: [],
     currentEditor: null,
-    theme: 'dark'
+    theme: 'dark',
+    searchAll: false,
+    searchPanelOpen: false,
+    searchQuery: ''
   },
 
   onFileDroppedOrSelected: null,
@@ -50,6 +57,7 @@ const CodeViewer = {
   init(options) {
     currentTheme = options.theme || 'dark';
     this.state.theme = currentTheme;
+    this.state.searchAll = options.searchAll || false;
     this.elements.container = document.getElementById('viewer-container');
     this.elements.header = document.getElementById('viewer-header');
     this.elements.filePath = document.getElementById('viewer-file-path');
@@ -116,6 +124,9 @@ updateActiveHighlight(filePath) {
   toggleViewMode() {
     this.state.viewMode = this.state.viewMode === 'single' ? 'all' : 'single';
     this.loadContent(); // Перерисовываем с теми же файлами, но в новом режиме
+    if (this.state.searchPanelOpen) {
+      this.openSearch();
+    }
   },
 
   loadContent(parsedFiles) {
@@ -203,6 +214,9 @@ updateActiveHighlight(filePath) {
       this.updateNavButtons();
     }
     this.elements.content.focus();
+    if (this.state.searchPanelOpen) {
+      this.openSearch();
+    }
   },
 
 showFile(index) {
@@ -235,6 +249,9 @@ showFile(index) {
       });
       view.focus();
       this.updateHeaderUI();
+      if (this.state.searchPanelOpen) {
+        this.openSearch();
+      }
   },
 
   updateHeaderUI() {
@@ -334,7 +351,84 @@ showFile(index) {
       const idx = this.state.files.findIndex(f => f.path === currentPath);
       if (idx !== -1) view = this.state.editors[idx];
     }
-    if (view) openSearchPanel(view);
+    if (view) {
+      openSearchPanel(view);
+      this.state.searchPanelOpen = true;
+      setTimeout(() => this.patchSearchPanel(view), 0);
+    }
+  },
+
+  patchSearchPanel(view) {
+    const panel = view.dom.querySelector('.cm-search');
+    if (!panel) return;
+    if (!panel.dataset.extraAdded) {
+      const label = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = this.state.searchAll;
+      cb.addEventListener('change', () => {
+        this.state.searchAll = cb.checked;
+        window.api.setConfig({ key: 'split.searchAllFiles', value: cb.checked });
+      });
+      label.append(cb, ' ', this.t('search_all_files_label'));
+      panel.appendChild(label);
+      panel.dataset.extraAdded = '1';
+      panel.addEventListener('click', (e) => {
+        if (e.target.name === 'next' || e.target.name === 'prev') {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          this.searchStep(e.target.name === 'next', view);
+        }
+      }, true);
+      panel.addEventListener('keydown', (e) => {
+        if (e.key === 'F3' || (e.key.toLowerCase() === 'g' && e.metaKey)) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          this.searchStep(!e.shiftKey, view);
+        }
+      }, true);
+    }
+    const input = panel.querySelector('[main-field]');
+    if (input) {
+      input.value = this.state.searchQuery;
+      input.dispatchEvent(new Event('input')); 
+      input.focus();
+      input.select();
+    }
+  },
+
+  searchStep(forward, view) {
+    if (!view) return;
+    const panel = view.dom.querySelector('.cm-search');
+    if (!panel) return;
+    const input = panel.querySelector('[main-field]');
+    const query = (input ? input.value : this.state.searchQuery) || '';
+    this.state.searchQuery = query;
+    const text = view.state.doc.toString();
+    const pos = view.state.selection.main[forward ? 'to' : 'from'];
+    const searchText = query.toLowerCase();
+    const hay = text.toLowerCase();
+    let index = forward ? hay.indexOf(searchText, pos) : hay.lastIndexOf(searchText, pos - 1);
+    if (index !== -1) {
+      view.dispatch({ selection: { anchor: index, head: index + query.length }, scrollIntoView: true });
+    } else if (this.state.searchAll) {
+      const currentIndex = this.state.viewMode === 'single' ? this.state.currentFileIndex : this.state.files.findIndex(f => f.path === this.elements.filePath.textContent);
+      const step = forward ? 1 : -1;
+      let idx = currentIndex + step;
+      while (idx >= 0 && idx < this.state.files.length) {
+        const f = this.state.files[idx];
+        const haystack = f.content.toLowerCase();
+        const pos2 = haystack.indexOf(searchText);
+        if (pos2 !== -1) {
+          if (this.state.viewMode === 'single') this.showFile(idx); else this.navigateTo(f.path);
+          this.openSearch();
+          const nv = this.state.viewMode === 'single' ? this.state.currentEditor : this.state.editors[idx];
+          nv.dispatch({ selection: { anchor: pos2, head: pos2 + query.length }, scrollIntoView: true });
+          break;
+        }
+        idx += step;
+      }
+    }
   },
 
   setTheme(theme) {
@@ -351,12 +445,17 @@ showFile(index) {
 
   updateUiForLanguage(t) {
     if (!t || !this.elements.container) return; // Защита от ошибок
+    this.t = t;
 
     this.elements.prevBtn.title = t('viewer_prev_file_tooltip');
     this.elements.nextBtn.title = t('viewer_next_file_tooltip');
     this.elements.toggleModeBtn.title = t('viewer_toggle_mode_tooltip');
     this.elements.searchBtn.title = t('viewer_search_tooltip');
     this.elements.fullscreenBtn.title = t('viewer_fullscreen_tooltip');
+  },
+
+  setPhrases(newPhrases) {
+    phrases = newPhrases || {};
   }
 };
 

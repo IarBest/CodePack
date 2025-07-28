@@ -28,8 +28,10 @@
       <div class="merge-grid">
         <div class="merge-controls">
           <h3 data-i18n="select_files_header">1. Выберите файлы</h3>
-          <button id="selectFolderBtn" data-i18n="select_folder_btn">Выбрать папку</button>
-          <button id="selectFilesBtn" data-i18n="select_files_btn">Выбрать файлы</button>
+          <button id="chooseFolderBtn" data-i18n="choose_folder_btn">Выбрать папку(-и)</button>
+          <button id="chooseFilesBtn" data-i18n="choose_files_btn">Выбрать файл(ы)</button>
+          <button id="selectFolderBtn" data-i18n="add_folder_btn">Добавить папку(-и)</button>
+          <button id="selectFilesBtn" data-i18n="add_files_btn">Добавить файл(ы)</button>
           <div id="drag-drop-zone" class="drag-drop-zone">
             <p data-i18n="drag_drop_area">Или перетащите файлы и папки сюда</p>
           </div>
@@ -75,6 +77,9 @@
             <h3 data-i18n="result_header">4. Результат</h3>
             <div class="setting-item" style="margin-top: 5px; margin-bottom: 10px;">
               <label><input type="checkbox" id="addTimestamp"> <span data-i18n="add_timestamp_label">Добавлять в имя файла дату и время</span></label>
+            </div>
+            <div class="setting-item" style="margin-top: 0; margin-bottom: 10px;">
+              <label><input type="checkbox" id="addNumber"> <span data-i18n="add_number_label">Добавлять номер</span></label>
             </div>
 <div class="setting-item" style="margin-bottom: 10px;">
   <label for="filenameComment" data-i18n="filename_comment_label">Комментарий к имени файла:</label>

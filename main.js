@@ -283,7 +283,7 @@ function initializeApp(store) {
   });
 
   ipcMain.handle('files:merge', async (_, options) => {
-    let { filesToMerge, outputPath, useAbsolutePaths } = options;
+    let { filesToMerge, outputPath, useAbsolutePaths, addNumber } = options;
     const findCommonBasePath = (paths) => {
         if (!paths || paths.length === 0) return '';
         if (paths.length === 1) return path.dirname(paths[0]);
@@ -328,10 +328,27 @@ function initializeApp(store) {
     }
 
     let finalPath = outputPath;
-    if (fs.existsSync(finalPath)) {
-        const dir = path.dirname(finalPath);
-        const ext = path.extname(finalPath);
-        const baseName = path.basename(finalPath, ext);
+    const dir = path.dirname(finalPath);
+    const ext = path.extname(finalPath);
+    let baseName = path.basename(finalPath, ext);
+
+    if (addNumber) {
+        let comment = '';
+        const commentMatch = baseName.match(/\s*\[[^\]]*\]\s*$/);
+        if (commentMatch) {
+            comment = commentMatch[0];
+            baseName = baseName.replace(/\s*\[[^\]]*\]\s*$/, '');
+        }
+        baseName = baseName.replace(/\s-\s.*$/, '');
+        let counter = 0;
+        let candidate;
+        do {
+            const suffix = counter > 0 ? `(${counter})` : '';
+            candidate = path.join(dir, `${baseName}${suffix}${comment}${ext}`);
+            counter++;
+        } while (fs.existsSync(candidate));
+        finalPath = candidate;
+    } else if (fs.existsSync(finalPath)) {
         let counter = 1;
         do {
             finalPath = path.join(dir, `${baseName}(${counter})${ext}`);

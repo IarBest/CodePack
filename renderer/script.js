@@ -79,8 +79,20 @@ document.addEventListener('DOMContentLoaded', () => {
         langLi.textContent = roAltActive ? 'Moldovenească' : 'Română';
     }
     // --- КОНЕЦ БЛОКА ФЛАГОВ ---
-
     CodeViewer.updateUiForLanguage(t);
+    CodeViewer.setPhrases({
+        'Find': t('search_find'),
+        'Replace': t('search_replace'),
+        'next': t('search_next'),
+        'previous': t('search_prev'),
+        'all': t('search_all'),
+        'match case': t('search_match_case'),
+        'regexp': t('search_regexp'),
+        'by word': t('search_by_word'),
+        'replace': t('search_replace_btn'),
+        'replace all': t('search_replace_all'),
+        'close': t('search_close')
+    });
   };
   // --- КОНЕЦ БЛОКА ЛОКАЛИЗАЦИИ ---
 
@@ -89,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
     '#ignorePatterns': 'merge.ignorePatterns',
     '#outputPath': 'merge.outputPath',
     '#useAbsolutePaths': 'merge.useAbsolutePaths',
+    '#addTimestamp': 'merge.addTimestamp',
+    '#addNumber': 'merge.addNumber',
     '#closeOnComplete': 'merge.closeOnComplete',
     '#excludeNodeModules': 'merge.excludeNodeModules',
     '#excludeUserData': 'merge.excludeUserData',
@@ -360,10 +374,12 @@ const applyBodyTheme = (theme) => {
     document.body.classList.toggle('dark-theme', theme === 'dark');
 };
 
-const setupEventListeners = (theme) => {
+const setupEventListeners = async (theme) => {
         applyBodyTheme(theme);
+        const searchAll = await window.api.getConfig('split.searchAllFiles', false);
         CodeViewer.init({
             theme,
+            searchAll,
             onFileDroppedOrSelected: async (files) => {
         let filePath = null;
         if (files && files.length > 0) {
@@ -500,6 +516,7 @@ const updateOutputFilename = async () => {
 };
     
     document.getElementById('addTimestamp').addEventListener('change', updateOutputFilename);
+    document.getElementById('addNumber').addEventListener('change', updateOutputFilename);
     document.getElementById('filenameComment').addEventListener('input', updateOutputFilename);
     document.getElementById('outputPath').addEventListener('change', () => {
         // Чтобы при ручном изменении пути настройки тоже применялись
@@ -547,13 +564,21 @@ const updateOutputFilename = async () => {
       saveSetting(textarea);
       applyFiltersAndRender();
     });
+    document.getElementById('chooseFolderBtn').addEventListener('click', async () => {
+      const paths = await window.api.showOpenDialog({ properties: ['openDirectory', 'multiSelections'] });
+      if (paths && paths.length > 0) await processSelectedPaths(paths, { replace: true });
+    });
+    document.getElementById('chooseFilesBtn').addEventListener('click', async () => {
+      const paths = await window.api.showOpenDialog({ properties: ['openFile', 'multiSelections'] });
+      if (paths && paths.length > 0) await processSelectedPaths(paths, { replace: true });
+    });
     document.getElementById('selectFolderBtn').addEventListener('click', async () => {
       const paths = await window.api.showOpenDialog({ properties: ['openDirectory', 'multiSelections'] });
-      if (paths && paths.length > 0) await processSelectedPaths(paths);
+      if (paths && paths.length > 0) await processSelectedPaths(paths, { forceInclude: true });
     });
     document.getElementById('selectFilesBtn').addEventListener('click', async () => {
       const paths = await window.api.showOpenDialog({ properties: ['openFile', 'multiSelections'] });
-      if (paths && paths.length > 0) await processSelectedPaths(paths);
+      if (paths && paths.length > 0) await processSelectedPaths(paths, { forceInclude: true });
     });
     document.getElementById('selectOutputPathBtn').addEventListener('click', async () => {
       const path = await window.api.showSaveDialog({
@@ -588,7 +613,8 @@ const updateOutputFilename = async () => {
       }
       showLoader(true);
       try {
-        const result = await window.api.mergeFiles({ filesToMerge, outputPath, useAbsolutePaths });
+        const addNumber = document.getElementById('addNumber').checked;
+        const result = await window.api.mergeFiles({ filesToMerge, outputPath, useAbsolutePaths, addNumber });
         if (result.success) {
             showToast(t('alert_merge_success_title') + '\n' + t('alert_merge_success_message', {outputPath: result.outputPath}), 'success');
             if (document.getElementById('closeOnComplete').checked) {
@@ -795,7 +821,7 @@ const updateOutputFilename = async () => {
     });
     window.api.onTriggerOpen(() => {
         if (document.getElementById('merge-tab').classList.contains('active')) {
-            document.getElementById('selectFolderBtn').click();
+            document.getElementById('chooseFolderBtn').click();
         } else if (document.getElementById('split-tab').classList.contains('active')) {
             document.getElementById('selectSplitFileBtn').click();
         }
@@ -813,6 +839,14 @@ const updateOutputFilename = async () => {
             const nextTab = currentTab === 'merge' ? 'split' : 'merge';
             switchTab(nextTab);
             return;
+        }
+
+        if (e.ctrlKey && e.key.toLowerCase() === 'f') {
+            if (document.getElementById('split-tab').classList.contains('active')) {
+                e.preventDefault();
+                CodeViewer.openSearch();
+                return;
+            }
         }
 		
  if (e.ctrlKey && (e.key === 'PageUp' || e.key === 'PageDown')) {
@@ -860,7 +894,7 @@ const updateOutputFilename = async () => {
     await loadSettings();
     alternateFlagsState = (await window.api.getConfig('ui.alternateFlags')) || {};
     const theme = await window.api.getConfig('ui.theme', 'dark');
-    setupEventListeners(theme);
+    await setupEventListeners(theme);
     window.api.onThemeChanged((th) => CodeViewer.setTheme(th));
     document.querySelectorAll('.setting-item textarea').forEach(autoResizeTextarea);
     const lastPaths = await window.api.getConfig('merge.lastUsedPaths');
@@ -1149,25 +1183,27 @@ const updateAllParentCheckboxes = (nodes) => {
   };
   
   let rawFileTree = [];
+  const forcedPaths = new Set();
   const applyFiltersAndRender = () => {
     const excludeNodeModules = document.getElementById('excludeNodeModules').checked;
     const excludeUserData = document.getElementById('excludeUserData').checked;
     const ignorePatterns = document.getElementById('ignorePatterns').value.split(',').map(p => p.trim()).filter(Boolean);
     const validExtensions = document.getElementById('validExtensions').value.split(',').map(p => p.trim()).filter(Boolean);
-    const processNode = (node, isParentExcluded = false) => {
+    const processNode = (node, isParentExcluded = false, parentForced = false) => {
+        const forced = parentForced || forcedPaths.has(node.path);
         const isIgnoredByName = ignorePatterns.some(pattern => pattern && node.name === pattern);
         const isNodeModulesFolder = excludeNodeModules && node.name === 'node_modules';
         const isUserDataFolder = excludeUserData && node.name === 'user-data';
         const isInvalidExtension = node.type === 'file' && !validExtensions.includes(node.ext);
-        node.isExcluded = isParentExcluded || isIgnoredByName || isNodeModulesFolder || isUserDataFolder || isInvalidExtension;
+        node.isExcluded = forced ? false : (isParentExcluded || isIgnoredByName || isNodeModulesFolder || isUserDataFolder || isInvalidExtension);
         node.checked = !node.isExcluded;
         node.indeterminate = false;
         if (node.children) {
-            node.children.forEach(child => processNode(child, node.isExcluded));
+            node.children.forEach(child => processNode(child, node.isExcluded, forced));
         }
     };
 
-    rawFileTree.forEach(node => processNode(node, false));
+    rawFileTree.forEach(node => processNode(node, false, forcedPaths.has(node.path)));
     expandIncludedNodes(rawFileTree);
     updateAllParentCheckboxes(rawFileTree);
     sortTree(rawFileTree);
@@ -1187,11 +1223,19 @@ const updateAllParentCheckboxes = (nodes) => {
     updateFileCount();
   };
 
-  const processSelectedPaths = async (paths) => {
+  const processSelectedPaths = async (paths, options = {}) => {
+    const { replace = false, forceInclude = false } = options;
     showLoader(true);
-	window.api.setConfig({ key: 'merge.lastUsedPaths', value: paths });
-    const currentPaths = new Set(rawFileTree.map(item => item.path));
-    paths.forEach(p => currentPaths.add(p));
+    window.api.setConfig({ key: 'merge.lastUsedPaths', value: paths });
+    if (replace) {
+        rawFileTree = [];
+        forcedPaths.clear();
+    }
+    const currentPaths = [];
+    if (!replace) rawFileTree.forEach(item => currentPaths.push(item.path));
+    paths.forEach(p => {
+        if (!currentPaths.includes(p)) currentPaths.unshift(p);
+    });
 
     rawFileTree = [];
     for (const p of [...currentPaths]) {
@@ -1206,6 +1250,7 @@ const updateAllParentCheckboxes = (nodes) => {
         const ext = '.' + p.split('.').pop().toLowerCase();
         rawFileTree.push({ name: p.split(/[\\/]/).pop(), path: p, type: 'file', children: [], ext: ext, checked: true });
       }
+      if (forceInclude) forcedPaths.add(p);
     }
     applyFiltersAndRender();
     showLoader(false);
