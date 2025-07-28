@@ -1,6 +1,6 @@
 // Управляет всем, что связано с просмотрщиком кода
 
-import {EditorState, EditorView, basicSetup, javascript, oneDark, Compartment} from './codemirror-bundle.js';
+import {EditorState, EditorView, basicSetup, javascript, oneDark, Compartment, openSearchPanel} from './codemirror-bundle.js';
 
 const themeCompartment = new Compartment();
 
@@ -84,9 +84,7 @@ const CodeViewer = {
     this.elements.prevBtn.addEventListener('click', () => this.prevFile());
     this.elements.nextBtn.addEventListener('click', () => this.nextFile());
     this.elements.toggleModeBtn.addEventListener('click', () => this.toggleViewMode());
-    this.elements.searchBtn.addEventListener('click', () => {
-    showToast('Функция поиска будет добавлена в будущих версиях!', 'info');
-});
+    this.elements.searchBtn.addEventListener('click', () => this.openSearch());
     this.elements.fullscreenBtn.addEventListener('click', () => {
     showToast('Полноэкранный режим будет добавлен в будущих версиях!', 'info');
 });
@@ -325,6 +323,18 @@ showFile(index) {
             this.showFile(fileIndex);
         }
     }
+  },
+
+  openSearch() {
+    let view = null;
+    if (this.state.viewMode === 'single') {
+      view = this.state.currentEditor;
+    } else {
+      const currentPath = this.elements.filePath.textContent;
+      const idx = this.state.files.findIndex(f => f.path === currentPath);
+      if (idx !== -1) view = this.state.editors[idx];
+    }
+    if (view) openSearchPanel(view);
   },
 
   setTheme(theme) {

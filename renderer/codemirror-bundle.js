@@ -24590,6 +24590,7 @@ var oneDarkHighlightStyle = /* @__PURE__ */ HighlightStyle.define([
 var oneDark = [oneDarkTheme, /* @__PURE__ */ syntaxHighlighting(oneDarkHighlightStyle)];
 export {
   EditorState,
+  openSearchPanel,
   EditorView,
   basicSetup,
   javascript,
