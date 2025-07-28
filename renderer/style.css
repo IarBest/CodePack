@@ -831,6 +831,28 @@ li.collapsed > ul { display: none; }
     background-color: #6c7380;
 }
 
+body.light-theme .cm-search {
+    background-color: #f0f0f0;
+    color: #000;
+    border: 1px solid #ccc;
+}
+
+body.light-theme .cm-search input {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #ccc;
+}
+
+body.light-theme .cm-search button {
+    background-color: #e0e0e0;
+    color: #000;
+    border: 1px solid transparent;
+}
+
+body.light-theme .cm-search button:hover {
+    background-color: #d5d5d5;
+}
+
 /* --- Стиль для активного элемента в дереве разборки --- */
 #split-file-list-container .tree-item.is-active > .tree-item-content {
   background-color: #eaf5fc; /* Светло-голубой фон */

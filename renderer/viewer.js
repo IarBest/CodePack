@@ -345,6 +345,8 @@ showFile(index) {
     const effect = themeCompartment.reconfigure(ext);
     this.state.editors.forEach(v => v.dispatch({ effects: effect }));
     if (this.state.currentEditor) this.state.currentEditor.dispatch({ effects: effect });
+    document.body.classList.toggle('light-theme', theme === 'light');
+    document.body.classList.toggle('dark-theme', theme === 'dark');
   },
 
   updateUiForLanguage(t) {

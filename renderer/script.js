@@ -355,10 +355,16 @@ const saveSetting = (element) => {
   }
 };
 
+const applyBodyTheme = (theme) => {
+    document.body.classList.toggle('light-theme', theme === 'light');
+    document.body.classList.toggle('dark-theme', theme === 'dark');
+};
+
 const setupEventListeners = (theme) => {
+        applyBodyTheme(theme);
         CodeViewer.init({
-    theme,
-    onFileDroppedOrSelected: async (files) => {
+            theme,
+            onFileDroppedOrSelected: async (files) => {
         let filePath = null;
         if (files && files.length > 0) {
             filePath = files[0].path;
@@ -832,7 +838,15 @@ const updateOutputFilename = async () => {
 }
 
         if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-            if (document.activeElement.tagName !== 'TEXTAREA') {
+            const active = document.activeElement;
+            const insideEditor = active.closest('.cm-editor');
+            const insideSearch = active.closest('.cm-search');
+            if (
+                active.tagName !== 'TEXTAREA' &&
+                active.tagName !== 'INPUT' &&
+                !insideEditor &&
+                !insideSearch
+            ) {
                 e.preventDefault();
                 triggerContextualSave();
             }
