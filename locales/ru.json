@@ -43,6 +43,7 @@
   "viewer_toggle_mode_tooltip": "Переключить режим просмотра",
   "viewer_search_tooltip": "Поиск (Ctrl+F)",
   "viewer_fullscreen_tooltip": "Во весь экран",
+  "viewer_exit_fullscreen_tooltip": "Выйти из полноэкранного режима",
   "delimiters_settings_label": "Настройки разделителей:",
   "delimiter_start_label": "Начало:",
   "delimiter_end_label": "Конец:",
