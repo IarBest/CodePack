@@ -380,6 +380,12 @@ showFile(index) {
       label.append(cb, ' ', this.t('search_all_files_label'));
       panel.appendChild(label);
       panel.dataset.extraAdded = '1';
+      const input = panel.querySelector('[main-field]');
+      if (input) {
+        input.addEventListener('input', () => {
+          this.state.searchQuery = input.value;
+        });
+      }
       panel.addEventListener('click', (e) => {
         if (e.target.name === 'next' || e.target.name === 'prev') {
           e.stopImmediatePropagation();
