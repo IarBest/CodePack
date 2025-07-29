@@ -64,6 +64,7 @@ const dateFormats = [
 function createMenu(store, win) {
   const currentLang = store.get('language', 'ru');
   const currentFormat = store.get('ui.dateFormat', 'dd-mm-yyyy');
+  const currentTheme = store.get('ui.theme', 'dark');
   const formatSubmenu = dateFormats.map(format => ({
     label: t(format.labelKey),
     type: 'radio',
@@ -74,6 +75,27 @@ function createMenu(store, win) {
       // Для мгновенного обновления можно было бы вызвать createMenu снова, но это не критично.
     }
   }));
+
+  const themeSubmenu = [
+    {
+      label: t('menu_theme_light'),
+      type: 'radio',
+      checked: currentTheme === 'light',
+      click: () => {
+        store.set('ui.theme', 'light');
+        win.webContents.send('theme-changed', 'light');
+      }
+    },
+    {
+      label: t('menu_theme_dark'),
+      type: 'radio',
+      checked: currentTheme === 'dark',
+      click: () => {
+        store.set('ui.theme', 'dark');
+        win.webContents.send('theme-changed', 'dark');
+      }
+    }
+  ];
 
   const menuTemplate = [
     {
@@ -96,6 +118,10 @@ function createMenu(store, win) {
     {
         label: t('menu_format'), // Используем ключ из локализации
         submenu: formatSubmenu
+    },
+    {
+        label: t('menu_theme'),
+        submenu: themeSubmenu
     },
     {
         label: t('menu_dev'),
@@ -257,7 +283,7 @@ function initializeApp(store) {
   });
 
   ipcMain.handle('files:merge', async (_, options) => {
-    let { filesToMerge, outputPath, useAbsolutePaths } = options;
+    let { filesToMerge, outputPath, useAbsolutePaths, addNumber } = options;
     const findCommonBasePath = (paths) => {
         if (!paths || paths.length === 0) return '';
         if (paths.length === 1) return path.dirname(paths[0]);
@@ -302,10 +328,27 @@ function initializeApp(store) {
     }
 
     let finalPath = outputPath;
-    if (fs.existsSync(finalPath)) {
-        const dir = path.dirname(finalPath);
-        const ext = path.extname(finalPath);
-        const baseName = path.basename(finalPath, ext);
+    const dir = path.dirname(finalPath);
+    const ext = path.extname(finalPath);
+    let baseName = path.basename(finalPath, ext);
+
+    if (addNumber) {
+        let comment = '';
+        const commentMatch = baseName.match(/\s*\[[^\]]*\]\s*$/);
+        if (commentMatch) {
+            comment = commentMatch[0];
+            baseName = baseName.replace(/\s*\[[^\]]*\]\s*$/, '');
+        }
+        baseName = baseName.replace(/\s-\s.*$/, '');
+        let counter = 0;
+        let candidate;
+        do {
+            const suffix = counter > 0 ? `(${counter})` : '';
+            candidate = path.join(dir, `${baseName}${suffix}${comment}${ext}`);
+            counter++;
+        } while (fs.existsSync(candidate));
+        finalPath = candidate;
+    } else if (fs.existsSync(finalPath)) {
         let counter = 1;
         do {
             finalPath = path.join(dir, `${baseName}(${counter})${ext}`);

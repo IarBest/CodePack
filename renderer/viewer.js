@@ -1,6 +1,35 @@
 // Управляет всем, что связано с просмотрщиком кода
 
+import {EditorState, EditorView, basicSetup, javascript, oneDark, Compartment, openSearchPanel} from './codemirror-bundle.js';
+
+let phrases = {};
+
+const themeCompartment = new Compartment();
+
+let currentTheme = 'dark';
+
+const createEditor = (parent, doc, onChange) => {
+  return new EditorView({
+    state: EditorState.create({
+      doc,
+      extensions: [
+        basicSetup,
+        javascript(),
+        themeCompartment.of(currentTheme === 'dark' ? oneDark : []),
+        EditorState.phrases.of(phrases),
+        EditorView.updateListener.of((v) => {
+          if (v.docChanged && typeof onChange === 'function') {
+            onChange(v.state.doc.toString());
+          }
+        })
+      ]
+    }),
+    parent
+  });
+};
+
 const CodeViewer = {
+  t: (str) => str,
   elements: {
     container: null, header: null, filePath: null, content: null,
     prevBtn: null, nextBtn: null, dropZone: null, selectFileBtn: null,
@@ -15,11 +44,20 @@ const CodeViewer = {
     currentFileIndex: -1,
     viewMode: 'all',
     fileObserver: null,
+    editors: [],
+    currentEditor: null,
+    theme: 'dark',
+    searchAll: false,
+    searchPanelOpen: false,
+    searchQuery: ''
   },
 
   onFileDroppedOrSelected: null,
 
   init(options) {
+    currentTheme = options.theme || 'dark';
+    this.state.theme = currentTheme;
+    this.state.searchAll = options.searchAll || false;
     this.elements.container = document.getElementById('viewer-container');
     this.elements.header = document.getElementById('viewer-header');
     this.elements.filePath = document.getElementById('viewer-file-path');
@@ -54,9 +92,7 @@ const CodeViewer = {
     this.elements.prevBtn.addEventListener('click', () => this.prevFile());
     this.elements.nextBtn.addEventListener('click', () => this.nextFile());
     this.elements.toggleModeBtn.addEventListener('click', () => this.toggleViewMode());
-    this.elements.searchBtn.addEventListener('click', () => {
-    showToast('Функция поиска будет добавлена в будущих версиях!', 'info');
-});
+    this.elements.searchBtn.addEventListener('click', () => this.openSearch());
     this.elements.fullscreenBtn.addEventListener('click', () => {
     showToast('Полноэкранный режим будет добавлен в будущих версиях!', 'info');
 });
@@ -88,10 +124,19 @@ updateActiveHighlight(filePath) {
   toggleViewMode() {
     this.state.viewMode = this.state.viewMode === 'single' ? 'all' : 'single';
     this.loadContent(); // Перерисовываем с теми же файлами, но в новом режиме
+    if (this.state.searchPanelOpen) {
+      this.openSearch();
+    }
   },
 
   loadContent(parsedFiles) {
   this.updateActiveHighlight(null);
+  this.state.editors.forEach(ed => ed.destroy());
+  this.state.editors = [];
+  if (this.state.currentEditor) {
+    this.state.currentEditor.destroy();
+    this.state.currentEditor = null;
+  }
     if (parsedFiles) {
         // Добавляем свойство для хранения позиции скролла
         this.state.files = parsedFiles
@@ -118,19 +163,26 @@ updateActiveHighlight(filePath) {
   },
 
   renderAllFiles() {
-    let allContentHTML = '';
+    this.elements.content.innerHTML = '';
     this.state.files.forEach(file => {
-        const pre = document.createElement('pre');
-        pre.textContent = file.content;
+        const block = document.createElement('div');
+        block.className = 'viewer-file-block';
+        block.dataset.path = file.path;
 
-        allContentHTML += `
-            <div class="viewer-file-block" data-path="${file.path}">
-                <div class="viewer-file-block-header">//======= FILE: ${file.path} =======</div>
-                ${pre.outerHTML}
-            </div>
-        `;
+        const header = document.createElement('div');
+        header.className = 'viewer-file-block-header';
+        header.textContent = `//======= FILE: ${file.path} =======`;
+        block.appendChild(header);
+
+        const editorWrap = document.createElement('div');
+        block.appendChild(editorWrap);
+
+        const view = createEditor(editorWrap, file.content, c => file.content = c);
+        this.state.editors.push(view);
+        if (this.state.editors.length === 1) view.focus();
+
+        this.elements.content.appendChild(block);
     });
-    this.elements.content.innerHTML = allContentHTML;
     this.elements.content.scrollTop = 0; // Сбрасываем скролл при переключении в режим потока
 
     const observerOptions = {
@@ -147,12 +199,24 @@ updateActiveHighlight(filePath) {
             this.elements.filePath.textContent = filePath;
             this.elements.filePath.title = filePath;
             this.updateActiveHighlight(filePath);
+            this.updateNavButtons();
         }
       }
     }, observerOptions);
 
     const fileBlocks = this.elements.content.querySelectorAll('.viewer-file-block');
     fileBlocks.forEach(block => this.state.fileObserver.observe(block));
+    if (fileBlocks.length > 0) {
+      const firstPath = fileBlocks[0].dataset.path;
+      this.elements.filePath.textContent = firstPath;
+      this.elements.filePath.title = firstPath;
+      this.updateActiveHighlight(firstPath);
+      this.updateNavButtons();
+    }
+    this.elements.content.focus();
+    if (this.state.searchPanelOpen) {
+      this.openSearch();
+    }
   },
 
 showFile(index) {
@@ -167,23 +231,36 @@ showFile(index) {
 
       this.elements.content.innerHTML = '';
 
-      const pre = document.createElement('pre');
-      pre.textContent = file.content;
-      this.elements.content.appendChild(pre);
+      if (this.state.currentEditor) {
+          this.state.currentEditor.destroy();
+          this.state.currentEditor = null;
+      }
 
-      // Восстанавливаем позицию скролла или ставим 0
-      this.elements.content.scrollTop = file.scrollPosition || 0;
+      const editorWrap = document.createElement('div');
+      this.elements.content.appendChild(editorWrap);
+      const view = createEditor(editorWrap, file.content, c => file.content = c);
+      this.state.currentEditor = view;
+
+      if (file.scrollPosition) {
+          view.scrollDOM.scrollTop = file.scrollPosition;
+      }
+      view.scrollDOM.addEventListener('scroll', () => {
+          file.scrollPosition = view.scrollDOM.scrollTop;
+      });
+      view.focus();
       this.updateHeaderUI();
+      if (this.state.searchPanelOpen) {
+        this.openSearch();
+      }
   },
 
   updateHeaderUI() {
       if (this.state.viewMode === 'all') {
-          this.elements.filePath.textContent = 'Режим потока';
-          this.elements.filePath.title = 'Все файлы в одном окне';
-          this.elements.prevBtn.style.display = 'none';
-          this.elements.nextBtn.style.display = 'none';
+          this.elements.prevBtn.style.display = 'block';
+          this.elements.nextBtn.style.display = 'block';
           this.elements.toggleModeBtn.textContent = '📄';
           this.elements.toggleModeBtn.title = 'Переключить в режим одного файла';
+          this.updateNavButtons();
       } else {
           this.elements.prevBtn.style.display = 'block';
           this.elements.nextBtn.style.display = 'block';
@@ -196,15 +273,31 @@ showFile(index) {
   },
 
   updateNavButtons() {
-    this.elements.prevBtn.disabled = this.state.currentFileIndex <= 0;
-    this.elements.nextBtn.disabled = this.state.currentFileIndex >= this.state.files.length - 1;
+    if (this.state.viewMode === 'single') {
+      this.elements.prevBtn.disabled = this.state.currentFileIndex <= 0;
+      this.elements.nextBtn.disabled = this.state.currentFileIndex >= this.state.files.length - 1;
+    } else {
+      const currentPath = this.elements.filePath.textContent;
+      const blocks = Array.from(this.elements.content.querySelectorAll('.viewer-file-block'));
+      const currentIndex = blocks.findIndex(b => b.dataset.path === currentPath);
+      this.elements.prevBtn.disabled = currentIndex <= 0;
+      this.elements.nextBtn.disabled = currentIndex === -1 || currentIndex >= blocks.length - 1;
+    }
   },
 
   prevFile() {
-    this.showFile(this.state.currentFileIndex - 1);
+    if (this.state.viewMode === 'all') {
+      this.scrollToPrevFile();
+    } else {
+      this.showFile(this.state.currentFileIndex - 1);
+    }
   },
   nextFile() {
-    this.showFile(this.state.currentFileIndex + 1);
+    if (this.state.viewMode === 'all') {
+      this.scrollToNextFile();
+    } else {
+      this.showFile(this.state.currentFileIndex + 1);
+    }
   },
 
   // Новые методы для прокрутки в режиме потока
@@ -230,7 +323,7 @@ showFile(index) {
     }
   },
 
-navigateTo(filePath) {
+  navigateTo(filePath) {
     this.updateActiveHighlight(filePath); // Обновляем подсветку немедленно
 
     const fileBlock = this.elements.content.querySelector(`.viewer-file-block[data-path="${CSS.escape(filePath)}"]`);
@@ -249,15 +342,121 @@ navigateTo(filePath) {
     }
   },
 
+  openSearch() {
+    let view = null;
+    if (this.state.viewMode === 'single') {
+      view = this.state.currentEditor;
+    } else {
+      const currentPath = this.elements.filePath.textContent;
+      const idx = this.state.files.findIndex(f => f.path === currentPath);
+      if (idx !== -1) view = this.state.editors[idx];
+    }
+    if (view) {
+      openSearchPanel(view);
+      this.state.searchPanelOpen = true;
+      setTimeout(() => this.patchSearchPanel(view), 0);
+    }
+  },
+
+  patchSearchPanel(view) {
+    const panel = view.dom.querySelector('.cm-search');
+    if (!panel) return;
+    if (!panel.dataset.extraAdded) {
+      const label = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = this.state.searchAll;
+      cb.addEventListener('change', () => {
+        this.state.searchAll = cb.checked;
+        window.api.setConfig({ key: 'split.searchAllFiles', value: cb.checked });
+      });
+      label.append(cb, ' ', this.t('search_all_files_label'));
+      panel.appendChild(label);
+      panel.dataset.extraAdded = '1';
+      panel.addEventListener('click', (e) => {
+        if (e.target.name === 'next' || e.target.name === 'prev') {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          this.searchStep(e.target.name === 'next', view);
+        }
+      }, true);
+      panel.addEventListener('keydown', (e) => {
+        if (e.key === 'F3' || (e.key.toLowerCase() === 'g' && e.metaKey)) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          this.searchStep(!e.shiftKey, view);
+        }
+      }, true);
+    }
+    const input = panel.querySelector('[main-field]');
+    if (input) {
+      input.value = this.state.searchQuery;
+      input.dispatchEvent(new Event('input')); 
+      input.focus();
+      input.select();
+    }
+  },
+
+  searchStep(forward, view) {
+    if (!view) return;
+    const panel = view.dom.querySelector('.cm-search');
+    if (!panel) return;
+    const input = panel.querySelector('[main-field]');
+    const query = (input ? input.value : this.state.searchQuery) || '';
+    this.state.searchQuery = query;
+    const text = view.state.doc.toString();
+    const pos = view.state.selection.main[forward ? 'to' : 'from'];
+    const searchText = query.toLowerCase();
+    const hay = text.toLowerCase();
+    let index = forward ? hay.indexOf(searchText, pos) : hay.lastIndexOf(searchText, pos - 1);
+    if (index !== -1) {
+      view.dispatch({ selection: { anchor: index, head: index + query.length }, scrollIntoView: true });
+    } else if (this.state.searchAll) {
+      const currentIndex = this.state.viewMode === 'single' ? this.state.currentFileIndex : this.state.files.findIndex(f => f.path === this.elements.filePath.textContent);
+      const step = forward ? 1 : -1;
+      let idx = currentIndex + step;
+      while (idx >= 0 && idx < this.state.files.length) {
+        const f = this.state.files[idx];
+        const haystack = f.content.toLowerCase();
+        const pos2 = haystack.indexOf(searchText);
+        if (pos2 !== -1) {
+          if (this.state.viewMode === 'single') this.showFile(idx); else this.navigateTo(f.path);
+          this.openSearch();
+          const nv = this.state.viewMode === 'single' ? this.state.currentEditor : this.state.editors[idx];
+          nv.dispatch({ selection: { anchor: pos2, head: pos2 + query.length }, scrollIntoView: true });
+          break;
+        }
+        idx += step;
+      }
+    }
+  },
+
+  setTheme(theme) {
+    if (this.state.theme === theme) return;
+    this.state.theme = theme;
+    currentTheme = theme;
+    const ext = theme === 'dark' ? oneDark : [];
+    const effect = themeCompartment.reconfigure(ext);
+    this.state.editors.forEach(v => v.dispatch({ effects: effect }));
+    if (this.state.currentEditor) this.state.currentEditor.dispatch({ effects: effect });
+    document.body.classList.toggle('light-theme', theme === 'light');
+    document.body.classList.toggle('dark-theme', theme === 'dark');
+  },
+
   updateUiForLanguage(t) {
     if (!t || !this.elements.container) return; // Защита от ошибок
+    this.t = t;
 
     this.elements.prevBtn.title = t('viewer_prev_file_tooltip');
     this.elements.nextBtn.title = t('viewer_next_file_tooltip');
-    this.elements.toggleModeBtn.title = this.state.viewMode === 'single'
-        ? t('viewer_toggle_mode_tooltip_all') // Нужны будут новые строки в локализации
-        : t('viewer_toggle_mode_tooltip_single');
+    this.elements.toggleModeBtn.title = t('viewer_toggle_mode_tooltip');
     this.elements.searchBtn.title = t('viewer_search_tooltip');
     this.elements.fullscreenBtn.title = t('viewer_fullscreen_tooltip');
+  },
+
+  setPhrases(newPhrases) {
+    phrases = newPhrases || {};
   }
 };
+
+window.CodeViewer = CodeViewer;

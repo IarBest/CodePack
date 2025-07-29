@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('api', {
   getTranslations: () => ipcRenderer.invoke('i18n:get-translations'),
   getAvailableLangs: () => ipcRenderer.invoke('app:get-available-langs'),
   onLanguageChanged: (callback) => ipcRenderer.on('language-changed', (_, newTranslations) => callback(newTranslations)),
+  onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (_, theme) => callback(theme)),
 
   // Диалоги
   showOpenDialog: (options) => ipcRenderer.invoke('dialog:open', options),

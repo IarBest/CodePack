@@ -795,11 +795,14 @@ li.collapsed > ul { display: none; }
 /* Стили для интеграции CodeMirror */
 .viewer-content {
   flex-grow: 1;
-  overflow: hidden; /* CodeMirror сам управляет скроллом */
+  overflow: auto; /* Позволяем прокручивать весь код */
   padding: 0; /* Убираем внутренние отступы, чтобы редактор прилегал к краям */
   font-size: 14px; /* Базовый размер шрифта для редактора */
 }
 
+.cm-editor .cm-scroller {
+  overflow: visible;
+}
 .cm-editor {
   height: 100%;
   outline: none; /* Убираем стандартную рамку фокуса */
@@ -826,6 +829,28 @@ li.collapsed > ul { display: none; }
 }
 .cm-search button:hover {
     background-color: #6c7380;
+}
+
+body.light-theme .cm-search {
+    background-color: #f0f0f0;
+    color: #000;
+    border: 1px solid #ccc;
+}
+
+body.light-theme .cm-search input {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #ccc;
+}
+
+body.light-theme .cm-search button {
+    background-color: #e0e0e0;
+    color: #000;
+    border: 1px solid transparent;
+}
+
+body.light-theme .cm-search button:hover {
+    background-color: #d5d5d5;
 }
 
 /* --- Стиль для активного элемента в дереве разборки --- */
