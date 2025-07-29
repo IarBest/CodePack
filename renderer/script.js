@@ -849,10 +849,18 @@ const updateOutputFilename = async () => {
             }
         }
 		
- if (e.ctrlKey && (e.key === 'PageUp' || e.key === 'PageDown')) {
-    if (document.getElementById('split-tab').classList.contains('active')) {
-        e.preventDefault();
-        if (CodeViewer.state.viewMode === 'all') {
+        if (e.ctrlKey && e.key === 'Enter') {
+            if (document.getElementById('split-tab').classList.contains('active')) {
+                e.preventDefault();
+                CodeViewer.toggleFullWindow();
+                return;
+            }
+        }
+
+        if (e.ctrlKey && (e.key === 'PageUp' || e.key === 'PageDown')) {
+            if (document.getElementById('split-tab').classList.contains('active')) {
+                e.preventDefault();
+                if (CodeViewer.state.viewMode === 'all') {
             // Логика для режима потока
             if (e.key === 'PageUp') {
                 CodeViewer.scrollToPrevFile();

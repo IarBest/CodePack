@@ -39,6 +39,7 @@ const CodeViewer = {
 	selectNewFileBtn: null,
     toggleModeBtn: null,
     searchBtn: null,
+    windowBtn: null,
     fullscreenBtn: null
   },
 
@@ -53,7 +54,8 @@ const CodeViewer = {
     searchAll: false,
     searchPanelOpen: false,
     searchQuery: '',
-    isFullscreen: false
+    isFullscreen: false,
+    isFullWindow: false
   },
 
   onFileDroppedOrSelected: null,
@@ -73,12 +75,14 @@ const CodeViewer = {
         this.elements.selectNewFileBtn = document.getElementById('selectNewFileBtn');
     this.elements.toggleModeBtn = document.getElementById('viewer-toggle-mode-btn');
     this.elements.searchBtn = document.getElementById('viewer-search-btn');
+    this.elements.windowBtn = document.getElementById('viewer-window-btn');
     this.elements.fullscreenBtn = document.getElementById('viewer-fullscreen-btn');
     searchPanelContainer = document.getElementById('viewer-search-container');
 
     this.onFileDroppedOrSelected = options.onFileDroppedOrSelected;
     this.addEventListeners();
     this.updateFullscreenButton(false);
+    this.updateFullWindowButton(false);
     console.log('CodeViewer initialized!');
   },
 
@@ -99,9 +103,15 @@ const CodeViewer = {
     this.elements.nextBtn.addEventListener('click', () => this.nextFile());
     this.elements.toggleModeBtn.addEventListener('click', () => this.toggleViewMode());
     this.elements.searchBtn.addEventListener('click', () => this.openSearch());
+    this.elements.windowBtn.addEventListener('click', () => this.toggleFullWindow());
     this.elements.fullscreenBtn.addEventListener('click', async () => {
       const isFull = await window.api.toggleFullScreen();
       this.updateFullscreenButton(isFull);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.state.isFullWindow) {
+        this.toggleFullWindow();
+      }
     });
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
     this.elements.content.addEventListener('scroll', () => {
@@ -474,6 +484,24 @@ showFile(index) {
     this.elements.fullscreenBtn.textContent = isFull ? '🗗' : '⛶';
   },
 
+  updateFullWindowButton(isFull) {
+    this.state.isFullWindow = isFull;
+    const key = isFull ? 'viewer_exit_fullwindow_tooltip' : 'viewer_fullwindow_tooltip';
+    this.elements.windowBtn.title = this.t(key);
+    this.elements.windowBtn.textContent = isFull ? '🗗' : '🗖';
+  },
+
+  async toggleFullWindow() {
+    const shouldEnable = !this.state.isFullWindow;
+    if (shouldEnable && this.state.isFullscreen) {
+      const isFull = await window.api.toggleFullScreen();
+      this.updateFullscreenButton(isFull);
+    }
+    this.updateFullWindowButton(shouldEnable);
+    this.elements.container.classList.toggle('fullwindow', shouldEnable);
+    document.body.classList.toggle('no-scroll', shouldEnable);
+  },
+
   updateUiForLanguage(t) {
     if (!t || !this.elements.container) return; // Защита от ошибок
     this.t = t;
@@ -484,6 +512,8 @@ showFile(index) {
     this.elements.searchBtn.title = t('viewer_search_tooltip');
     const fsKey = this.state.isFullscreen ? 'viewer_exit_fullscreen_tooltip' : 'viewer_fullscreen_tooltip';
     this.elements.fullscreenBtn.title = t(fsKey);
+    const fwKey = this.state.isFullWindow ? 'viewer_exit_fullwindow_tooltip' : 'viewer_fullwindow_tooltip';
+    this.elements.windowBtn.title = t(fwKey);
   },
 
   setPhrases(newPhrases) {
