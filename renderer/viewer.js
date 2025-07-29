@@ -99,9 +99,8 @@ const CodeViewer = {
     this.elements.nextBtn.addEventListener('click', () => this.nextFile());
     this.elements.toggleModeBtn.addEventListener('click', () => this.toggleViewMode());
     this.elements.searchBtn.addEventListener('click', () => this.openSearch());
-    this.elements.fullscreenBtn.addEventListener('click', async () => {
-      const isFull = await window.api.toggleFullScreen();
-      this.updateFullscreenButton(isFull);
+    this.elements.fullscreenBtn.addEventListener('click', () => {
+      this.toggleFullscreen();
     });
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
     this.elements.content.addEventListener('scroll', () => {
@@ -472,6 +471,13 @@ showFile(index) {
     const tooltipKey = isFull ? 'viewer_exit_fullscreen_tooltip' : 'viewer_fullscreen_tooltip';
     this.elements.fullscreenBtn.title = this.t(tooltipKey);
     this.elements.fullscreenBtn.textContent = isFull ? '🗗' : '⛶';
+  },
+
+  toggleFullscreen() {
+    const container = this.elements.container;
+    const isFull = !container.classList.contains('fullscreen');
+    container.classList.toggle('fullscreen', isFull);
+    this.updateFullscreenButton(isFull);
   },
 
   updateUiForLanguage(t) {

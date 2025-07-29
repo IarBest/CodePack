@@ -13,11 +13,12 @@ a tree view with checkboxes, persistent settings, and a CodeMirror-based code
 viewer/editor. Translations exist for English, Russian and Romanian.
 
 Recent work added a .gitignore, improved localization strings, and implemented a
-CodeMirror viewer with navigation and search.
+CodeMirror viewer with navigation and search. The fullscreen button now expands
+only the code viewer with a smooth 0.2s animation and can be toggled via the
+Alt+Enter hotkey.
 
 ## Planned Work
 
 - Polish existing features and fix minor issues.
-- Implement fullscreen mode in the code viewer.
 - Complete missing translation keys (e.g., Romanian `menu_format`).
 
