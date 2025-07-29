@@ -853,6 +853,16 @@ body.light-theme .cm-search button:hover {
     background-color: #d5d5d5;
 }
 
+#viewer-search-container {
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+}
+
+#viewer-search-container .cm-panels-bottom {
+    width: 100%;
+}
+
 /* --- Стиль для активного элемента в дереве разборки --- */
 #split-file-list-container .tree-item.is-active > .tree-item-content {
   background-color: #eaf5fc; /* Светло-голубой фон */
