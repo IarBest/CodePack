@@ -24591,9 +24591,11 @@ var oneDark = [oneDarkTheme, /* @__PURE__ */ syntaxHighlighting(oneDarkHighlight
 export {
   EditorState,
   openSearchPanel,
+  closeSearchPanel,
   EditorView,
   basicSetup,
   javascript,
   oneDark,
-  Compartment
+  Compartment,
+  panelConfig
 };

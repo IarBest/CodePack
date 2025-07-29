@@ -1,10 +1,12 @@
 // Управляет всем, что связано с просмотрщиком кода
 
-import {EditorState, EditorView, basicSetup, javascript, oneDark, Compartment, openSearchPanel} from './codemirror-bundle.js';
+import {EditorState, EditorView, basicSetup, javascript, oneDark, Compartment, openSearchPanel, closeSearchPanel, panelConfig} from './codemirror-bundle.js';
 
 let phrases = {};
 
 const themeCompartment = new Compartment();
+
+let searchPanelContainer = null;
 
 let currentTheme = 'dark';
 
@@ -21,7 +23,8 @@ const createEditor = (parent, doc, onChange) => {
           if (v.docChanged && typeof onChange === 'function') {
             onChange(v.state.doc.toString());
           }
-        })
+        }),
+        panelConfig.of({ bottomContainer: searchPanelContainer })
       ]
     }),
     parent
@@ -66,10 +69,11 @@ const CodeViewer = {
     this.elements.nextBtn = document.getElementById('viewer-next-btn');
     this.elements.dropZone = document.getElementById('viewer-drop-zone');
     this.elements.selectFileBtn = document.getElementById('selectSplitFileBtn');
-	this.elements.selectNewFileBtn = document.getElementById('selectNewFileBtn');
+        this.elements.selectNewFileBtn = document.getElementById('selectNewFileBtn');
     this.elements.toggleModeBtn = document.getElementById('viewer-toggle-mode-btn');
     this.elements.searchBtn = document.getElementById('viewer-search-btn');
     this.elements.fullscreenBtn = document.getElementById('viewer-fullscreen-btn');
+    searchPanelContainer = document.getElementById('viewer-search-container');
 
     this.onFileDroppedOrSelected = options.onFileDroppedOrSelected;
     this.addEventListeners();
@@ -343,6 +347,9 @@ showFile(index) {
   },
 
   openSearch() {
+    // Close existing panels to avoid duplicates
+    this.state.editors.forEach(ed => closeSearchPanel(ed));
+    if (this.state.currentEditor) closeSearchPanel(this.state.currentEditor);
     let view = null;
     if (this.state.viewMode === 'single') {
       view = this.state.currentEditor;
@@ -386,12 +393,20 @@ showFile(index) {
           e.preventDefault();
           this.searchStep(!e.shiftKey, view);
         }
+        if (e.key === 'Enter') {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          this.searchStep(true, view);
+        }
       }, true);
+    }
+    if (panel.parentNode !== searchPanelContainer) {
+      searchPanelContainer.appendChild(panel);
     }
     const input = panel.querySelector('[main-field]');
     if (input) {
       input.value = this.state.searchQuery;
-      input.dispatchEvent(new Event('input')); 
+      input.dispatchEvent(new Event('input'));
       input.focus();
       input.select();
     }
