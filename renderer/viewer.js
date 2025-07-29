@@ -49,7 +49,8 @@ const CodeViewer = {
     theme: 'dark',
     searchAll: false,
     searchPanelOpen: false,
-    searchQuery: ''
+    searchQuery: '',
+    isFullscreen: false
   },
 
   onFileDroppedOrSelected: null,
@@ -73,6 +74,7 @@ const CodeViewer = {
 
     this.onFileDroppedOrSelected = options.onFileDroppedOrSelected;
     this.addEventListeners();
+    this.updateFullscreenButton(false);
     console.log('CodeViewer initialized!');
   },
 
@@ -93,9 +95,10 @@ const CodeViewer = {
     this.elements.nextBtn.addEventListener('click', () => this.nextFile());
     this.elements.toggleModeBtn.addEventListener('click', () => this.toggleViewMode());
     this.elements.searchBtn.addEventListener('click', () => this.openSearch());
-    this.elements.fullscreenBtn.addEventListener('click', () => {
-    showToast('Полноэкранный режим будет добавлен в будущих версиях!', 'info');
-});
+    this.elements.fullscreenBtn.addEventListener('click', async () => {
+      const isFull = await window.api.toggleFullScreen();
+      this.updateFullscreenButton(isFull);
+    });
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
     this.elements.content.addEventListener('scroll', () => {
         if (this.state.viewMode === 'single' && this.state.currentFileIndex !== -1) {
@@ -443,6 +446,13 @@ showFile(index) {
     document.body.classList.toggle('dark-theme', theme === 'dark');
   },
 
+  updateFullscreenButton(isFull) {
+    this.state.isFullscreen = isFull;
+    const tooltipKey = isFull ? 'viewer_exit_fullscreen_tooltip' : 'viewer_fullscreen_tooltip';
+    this.elements.fullscreenBtn.title = this.t(tooltipKey);
+    this.elements.fullscreenBtn.textContent = isFull ? '🗗' : '⛶';
+  },
+
   updateUiForLanguage(t) {
     if (!t || !this.elements.container) return; // Защита от ошибок
     this.t = t;
@@ -451,7 +461,8 @@ showFile(index) {
     this.elements.nextBtn.title = t('viewer_next_file_tooltip');
     this.elements.toggleModeBtn.title = t('viewer_toggle_mode_tooltip');
     this.elements.searchBtn.title = t('viewer_search_tooltip');
-    this.elements.fullscreenBtn.title = t('viewer_fullscreen_tooltip');
+    const fsKey = this.state.isFullscreen ? 'viewer_exit_fullscreen_tooltip' : 'viewer_fullscreen_tooltip';
+    this.elements.fullscreenBtn.title = t(fsKey);
   },
 
   setPhrases(newPhrases) {

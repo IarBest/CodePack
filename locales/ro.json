@@ -42,6 +42,7 @@
   "viewer_toggle_mode_tooltip": "Comutați modul de vizualizare",
   "viewer_search_tooltip": "Căutare (Ctrl+F)",
   "viewer_fullscreen_tooltip": "Ecran complet",
+  "viewer_exit_fullscreen_tooltip": "Ieșire ecran complet",
   "delimiters_settings_label": "Setări delimitatori:",
   "delimiter_start_label": "Început:",
   "delimiter_end_label": "Sfârșit:",

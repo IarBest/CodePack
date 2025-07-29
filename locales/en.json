@@ -42,6 +42,7 @@
   "viewer_toggle_mode_tooltip": "Toggle view mode",
   "viewer_search_tooltip": "Search (Ctrl+F)",
   "viewer_fullscreen_tooltip": "Fullscreen",
+  "viewer_exit_fullscreen_tooltip": "Exit fullscreen",
   "delimiters_settings_label": "Delimiter settings:",
   "delimiter_start_label": "Start:",
   "delimiter_end_label": "End:",

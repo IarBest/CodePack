@@ -32,7 +32,8 @@ contextBridge.exposeInMainWorld('api', {
   onPathsSelected: (callback) => ipcRenderer.on('paths-selected', (_, paths) => callback(paths)),
   onTriggerSave: (callback) => ipcRenderer.on('trigger-save', callback),
   onTriggerOpen: (callback) => ipcRenderer.on('trigger-open', callback),
-  
+
   // Управление приложением
-  quitApp: () => ipcRenderer.send('app:quit')
+  quitApp: () => ipcRenderer.send('app:quit'),
+  toggleFullScreen: () => ipcRenderer.invoke('window:toggle-fullscreen')
 });

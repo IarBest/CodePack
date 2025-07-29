@@ -397,6 +397,15 @@ function initializeApp(store) {
     clipboard.writeText(text);
   });
 
+  ipcMain.handle('window:toggle-fullscreen', () => {
+    if (mainWindow) {
+      const isFull = mainWindow.isFullScreen();
+      mainWindow.setFullScreen(!isFull);
+      return !isFull;
+    }
+    return false;
+  });
+
   ipcMain.on('app:quit', () => {
     app.quit();
   });
