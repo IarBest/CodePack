@@ -79,6 +79,7 @@
   "menu_theme_light": "Luminoasă",
   "menu_theme_dark": "Întunecată",
   "lang_selector_label": "Limba interfeței ▼",
+  "menu_format": "Format dată",
   "menu_format_ddmmyyyy": "ZZ-LL-AAAA (17-02-2025)",
   "menu_format_yyyymmdd": "AAAA-LL-ZZ (2025-02-17)",
   "menu_format_mmddyyyy": "LL-ZZ-AAAA (02-17-2025)",
