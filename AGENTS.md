@@ -15,7 +15,8 @@ viewer/editor. Translations exist for English, Russian and Romanian.
 Recent work added a .gitignore, improved localization strings, and implemented a
 CodeMirror viewer with navigation and search. The fullscreen button now expands
 only the code viewer with a smooth 0.2s animation and can be toggled via the
-Alt+Enter hotkey.
+Alt+Enter hotkey. The Escape key now closes the search panel before exiting
+fullscreen.
 
 ## Planned Work
 
