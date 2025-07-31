@@ -55,7 +55,8 @@ const CodeViewer = {
     searchPanelOpen: false,
     searchQuery: '',
     isFullscreen: false,
-    isFullWindow: false
+    isFullWindow: false,
+    escClosedSearch: false
   },
 
   onFileDroppedOrSelected: null,
@@ -116,6 +117,9 @@ const CodeViewer = {
         if (this.state.searchPanelOpen) {
           e.preventDefault();
           this.closeSearch();
+          if (this.state.isFullscreen) {
+            this.state.escClosedSearch = true;
+          }
           return;
         }
         if (this.state.isFullscreen) {
@@ -132,6 +136,11 @@ const CodeViewer = {
 
     document.addEventListener('fullscreenchange', () => {
       const isFull = document.fullscreenElement === this.elements.container;
+      if (!isFull && this.state.escClosedSearch) {
+        this.state.escClosedSearch = false;
+        this.elements.container.requestFullscreen().catch(() => {});
+        return;
+      }
       this.updateFullscreenButton(isFull);
     });
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
