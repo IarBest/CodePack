@@ -136,9 +136,15 @@ const CodeViewer = {
     document.addEventListener('fullscreenchange', () => {
       const isFull = document.fullscreenElement === this.elements.container;
       this.updateFullscreenButton(isFull);
-      if (!isFull && this.state.escClosedSearch) {
-        this.state.escClosedSearch = false;
-        this.toggleFullScreen();
+      if (!isFull) {
+        if (this.state.searchPanelOpen) {
+          this.closeSearch();
+          this.state.escClosedSearch = false;
+          this.toggleFullScreen();
+        } else if (this.state.escClosedSearch) {
+          this.state.escClosedSearch = false;
+          this.toggleFullScreen();
+        }
       }
     });
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
