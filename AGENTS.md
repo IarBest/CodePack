@@ -16,7 +16,8 @@ Recent work added a .gitignore, improved localization strings, and implemented a
 CodeMirror viewer with navigation and search. The fullscreen button now expands
 only the code viewer with a smooth 0.2s animation and can be toggled via the
 Alt+Enter hotkey. The Escape key now closes the search panel before exiting
-fullscreen.
+fullscreen. Search panel code was updated to reliably show the "search in all
+files" checkbox by waiting for the panel DOM to mount before patching it.
 
 ## Planned Work
 

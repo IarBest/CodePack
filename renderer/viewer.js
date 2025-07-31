@@ -418,9 +418,14 @@ showFile(index) {
     this.state.searchPanelOpen = false;
   },
 
-  patchSearchPanel(view) {
+  patchSearchPanel(view, attempt = 0) {
     const panel = view.dom.querySelector('.cm-search');
-    if (!panel) return;
+    if (!panel) {
+      if (attempt < 5) {
+        setTimeout(() => this.patchSearchPanel(view, attempt + 1), 50);
+      }
+      return;
+    }
     if (!panel.dataset.extraAdded) {
       const label = document.createElement('label');
       const cb = document.createElement('input');
