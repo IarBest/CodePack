@@ -39,6 +39,7 @@ const CodeViewer = {
 	selectNewFileBtn: null,
     toggleModeBtn: null,
     searchBtn: null,
+    windowBtn: null,
     fullscreenBtn: null
   },
 
@@ -53,7 +54,9 @@ const CodeViewer = {
     searchAll: false,
     searchPanelOpen: false,
     searchQuery: '',
-    isFullscreen: false
+    isFullscreen: false,
+    isFullWindow: false,
+    escClosedSearch: false
   },
 
   onFileDroppedOrSelected: null,
@@ -73,12 +76,14 @@ const CodeViewer = {
         this.elements.selectNewFileBtn = document.getElementById('selectNewFileBtn');
     this.elements.toggleModeBtn = document.getElementById('viewer-toggle-mode-btn');
     this.elements.searchBtn = document.getElementById('viewer-search-btn');
+    this.elements.windowBtn = document.getElementById('viewer-window-btn');
     this.elements.fullscreenBtn = document.getElementById('viewer-fullscreen-btn');
     searchPanelContainer = document.getElementById('viewer-search-container');
 
     this.onFileDroppedOrSelected = options.onFileDroppedOrSelected;
     this.addEventListeners();
     this.updateFullscreenButton(false);
+    this.updateFullWindowButton(false);
     console.log('CodeViewer initialized!');
   },
 
@@ -99,8 +104,42 @@ const CodeViewer = {
     this.elements.nextBtn.addEventListener('click', () => this.nextFile());
     this.elements.toggleModeBtn.addEventListener('click', () => this.toggleViewMode());
     this.elements.searchBtn.addEventListener('click', () => this.openSearch());
-    this.elements.fullscreenBtn.addEventListener('click', () => {
-      this.toggleFullscreen();
+    this.elements.windowBtn.addEventListener('click', () => this.toggleFullWindow());
+    this.elements.fullscreenBtn.addEventListener('click', () => this.toggleFullScreen());
+
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key === 'Enter') {
+        e.preventDefault();
+        this.toggleFullScreen();
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (this.state.searchPanelOpen) {
+          if (this.state.isFullscreen) this.state.escClosedSearch = true;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          this.closeSearch();
+          return;
+        }
+        if (this.state.isFullscreen) {
+          e.preventDefault();
+          this.toggleFullScreen();
+          return;
+        }
+        if (this.state.isFullWindow) {
+          e.preventDefault();
+          this.toggleFullWindow();
+        }
+      }
+    }, true);
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFull = document.fullscreenElement === this.elements.container;
+      this.updateFullscreenButton(isFull);
+      if (!isFull && this.state.escClosedSearch) {
+        this.state.escClosedSearch = false;
+        this.toggleFullScreen();
+      }
     });
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
     this.elements.content.addEventListener('scroll', () => {
@@ -367,6 +406,12 @@ showFile(index) {
     }
   },
 
+  closeSearch() {
+    this.state.editors.forEach(ed => closeSearchPanel(ed));
+    if (this.state.currentEditor) closeSearchPanel(this.state.currentEditor);
+    this.state.searchPanelOpen = false;
+  },
+
   patchSearchPanel(view) {
     const panel = view.dom.querySelector('.cm-search');
     if (!panel) return;
@@ -406,7 +451,18 @@ showFile(index) {
           e.preventDefault();
           this.searchStep(true, view);
         }
+        if (e.key === 'Escape') {
+          if (this.state.isFullscreen) this.state.escClosedSearch = true;
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          this.closeSearch();
+        }
       }, true);
+      const closeBtn = panel.querySelector('button[name="close"]');
+      if (closeBtn && !closeBtn.dataset.closeHandled) {
+        closeBtn.addEventListener('click', () => this.closeSearch());
+        closeBtn.dataset.closeHandled = '1';
+      }
     }
     if (panel.parentNode !== searchPanelContainer) {
       searchPanelContainer.appendChild(panel);
@@ -473,11 +529,35 @@ showFile(index) {
     this.elements.fullscreenBtn.textContent = isFull ? '🗗' : '⛶';
   },
 
-  toggleFullscreen() {
-    const container = this.elements.container;
-    const isFull = !container.classList.contains('fullscreen');
-    container.classList.toggle('fullscreen', isFull);
-    this.updateFullscreenButton(isFull);
+
+  updateFullWindowButton(isFull) {
+    this.state.isFullWindow = isFull;
+    const key = isFull ? 'viewer_exit_fullwindow_tooltip' : 'viewer_fullwindow_tooltip';
+    this.elements.windowBtn.title = this.t(key);
+    this.elements.windowBtn.textContent = isFull ? '🗗' : '🗖';
+  },
+
+  async toggleFullScreen() {
+    const shouldEnable = !this.state.isFullscreen;
+    if (shouldEnable && this.state.isFullWindow) {
+      await this.toggleFullWindow();
+    }
+    if (shouldEnable) {
+      await this.elements.container.requestFullscreen();
+    } else if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    }
+    this.updateFullscreenButton(shouldEnable);
+  },
+
+  async toggleFullWindow() {
+    const shouldEnable = !this.state.isFullWindow;
+    if (shouldEnable && this.state.isFullscreen) {
+      await this.toggleFullScreen();
+    }
+    this.updateFullWindowButton(shouldEnable);
+    this.elements.container.classList.toggle('fullwindow', shouldEnable);
+    document.body.classList.toggle('no-scroll', shouldEnable);
   },
 
   updateUiForLanguage(t) {
@@ -490,6 +570,8 @@ showFile(index) {
     this.elements.searchBtn.title = t('viewer_search_tooltip');
     const fsKey = this.state.isFullscreen ? 'viewer_exit_fullscreen_tooltip' : 'viewer_fullscreen_tooltip';
     this.elements.fullscreenBtn.title = t(fsKey);
+    const fwKey = this.state.isFullWindow ? 'viewer_exit_fullwindow_tooltip' : 'viewer_fullwindow_tooltip';
+    this.elements.windowBtn.title = t(fwKey);
   },
 
   setPhrases(newPhrases) {

@@ -857,10 +857,26 @@ const updateOutputFilename = async () => {
             }
         }
 		
- if (e.ctrlKey && (e.key === 'PageUp' || e.key === 'PageDown')) {
-    if (document.getElementById('split-tab').classList.contains('active')) {
-        e.preventDefault();
-        if (CodeViewer.state.viewMode === 'all') {
+        if (e.ctrlKey && e.key === 'Enter') {
+            if (document.getElementById('split-tab').classList.contains('active')) {
+                e.preventDefault();
+                CodeViewer.toggleFullWindow();
+                return;
+            }
+        }
+
+        if (e.altKey && e.key === 'Enter') {
+            if (document.getElementById('split-tab').classList.contains('active')) {
+                e.preventDefault();
+                CodeViewer.toggleFullScreen();
+                return;
+            }
+        }
+
+        if (e.ctrlKey && (e.key === 'PageUp' || e.key === 'PageDown')) {
+            if (document.getElementById('split-tab').classList.contains('active')) {
+                e.preventDefault();
+                if (CodeViewer.state.viewMode === 'all') {
             // Логика для режима потока
             if (e.key === 'PageUp') {
                 CodeViewer.scrollToPrevFile();
@@ -893,7 +909,7 @@ const updateOutputFilename = async () => {
                 triggerContextualSave();
             }
         }
-    });
+    }, true);
   };
 
 
@@ -1243,7 +1259,7 @@ const updateAllParentCheckboxes = (nodes) => {
     if (!replace) rawFileTree.forEach(item => currentPaths.push(item.path));
     paths.forEach(p => {
         if (!currentPaths.includes(p)) currentPaths.unshift(p);
-    });
+    }, true);
 
     rawFileTree = [];
     for (const p of [...currentPaths]) {

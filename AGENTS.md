@@ -20,5 +20,3 @@ Alt+Enter hotkey.
 ## Planned Work
 
 - Polish existing features and fix minor issues.
-- Complete missing translation keys (e.g., Romanian `menu_format`).
-
