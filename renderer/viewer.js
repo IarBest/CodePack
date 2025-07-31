@@ -55,8 +55,7 @@ const CodeViewer = {
     searchPanelOpen: false,
     searchQuery: '',
     isFullscreen: false,
-    isFullWindow: false,
-    escClosedSearch: false
+    isFullWindow: false
   },
 
   onFileDroppedOrSelected: null,
@@ -116,10 +115,8 @@ const CodeViewer = {
       if (e.key === 'Escape') {
         if (this.state.searchPanelOpen) {
           e.preventDefault();
+          e.stopImmediatePropagation();
           this.closeSearch();
-          if (this.state.isFullscreen) {
-            this.state.escClosedSearch = true;
-          }
           return;
         }
         if (this.state.isFullscreen) {
@@ -136,11 +133,6 @@ const CodeViewer = {
 
     document.addEventListener('fullscreenchange', () => {
       const isFull = document.fullscreenElement === this.elements.container;
-      if (!isFull && this.state.escClosedSearch) {
-        this.state.escClosedSearch = false;
-        this.elements.container.requestFullscreen().catch(() => {});
-        return;
-      }
       this.updateFullscreenButton(isFull);
     });
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
@@ -454,12 +446,14 @@ showFile(index) {
           this.searchStep(true, view);
         }
         if (e.key === 'Escape') {
-          this.state.searchPanelOpen = false;
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          this.closeSearch();
         }
       }, true);
       const closeBtn = panel.querySelector('button[name="close"]');
       if (closeBtn && !closeBtn.dataset.closeHandled) {
-        closeBtn.addEventListener('click', () => this.state.searchPanelOpen = false);
+        closeBtn.addEventListener('click', () => this.closeSearch());
         closeBtn.dataset.closeHandled = '1';
       }
     }
