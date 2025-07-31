@@ -594,6 +594,8 @@ li.collapsed > ul { display: none; }
   display: flex;
   flex-direction: column;
   background: #fdfdfd;
+  position: relative;
+  transition: all 0.2s ease-in-out;
 }
 
 .viewer-header {
@@ -656,6 +658,8 @@ li.collapsed > ul { display: none; }
   display: flex;
   flex-direction: column;
   background: #fdfdfd;
+  position: relative;
+  transition: all 0.2s ease-in-out;
 }
 
 .viewer-header {
@@ -702,6 +706,17 @@ li.collapsed > ul { display: none; }
 .viewer-toolbar button:hover {
   border-color: var(--border-color);
   background-color: white;
+}
+
+.viewer-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  border-radius: 0;
+  z-index: 1000;
 }
 
 /* Старые стили больше не нужны, удаляем их */

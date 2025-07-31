@@ -529,6 +529,7 @@ showFile(index) {
     this.elements.fullscreenBtn.textContent = isFull ? '🗗' : '⛶';
   },
 
+
   updateFullWindowButton(isFull) {
     this.state.isFullWindow = isFull;
     const key = isFull ? 'viewer_exit_fullwindow_tooltip' : 'viewer_fullwindow_tooltip';

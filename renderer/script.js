@@ -833,6 +833,14 @@ const updateOutputFilename = async () => {
             return;
         }
 
+        if (e.altKey && e.key === 'Enter') {
+            if (document.getElementById('split-tab').classList.contains('active')) {
+                e.preventDefault();
+                CodeViewer.toggleFullscreen();
+                return;
+            }
+        }
+
         if (e.ctrlKey && e.key === 'Tab') {
             e.preventDefault();
             const currentTab = document.querySelector('.tab-btn.active').dataset.tab;
