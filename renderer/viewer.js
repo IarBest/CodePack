@@ -104,15 +104,27 @@ const CodeViewer = {
     this.elements.toggleModeBtn.addEventListener('click', () => this.toggleViewMode());
     this.elements.searchBtn.addEventListener('click', () => this.openSearch());
     this.elements.windowBtn.addEventListener('click', () => this.toggleFullWindow());
-    this.elements.fullscreenBtn.addEventListener('click', async () => {
-      const isFull = await window.api.toggleFullScreen();
-      this.updateFullscreenButton(isFull);
-    });
+    this.elements.fullscreenBtn.addEventListener('click', () => this.toggleFullScreen());
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.state.isFullWindow) {
-        this.toggleFullWindow();
+      if (e.altKey && e.key === 'Enter') {
+        e.preventDefault();
+        this.toggleFullScreen();
+        return;
       }
-    });
+      if (e.key === 'Escape') {
+        if (this.state.searchPanelOpen) {
+          this.closeSearch();
+          return;
+        }
+        if (this.state.isFullscreen) {
+          this.toggleFullScreen();
+          return;
+        }
+        if (this.state.isFullWindow) {
+          this.toggleFullWindow();
+        }
+      }
+    }, true);
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
     this.elements.content.addEventListener('scroll', () => {
         if (this.state.viewMode === 'single' && this.state.currentFileIndex !== -1) {
@@ -378,6 +390,12 @@ showFile(index) {
     }
   },
 
+  closeSearch() {
+    this.state.editors.forEach(ed => closeSearchPanel(ed));
+    if (this.state.currentEditor) closeSearchPanel(this.state.currentEditor);
+    this.state.searchPanelOpen = false;
+  },
+
   patchSearchPanel(view) {
     const panel = view.dom.querySelector('.cm-search');
     if (!panel) return;
@@ -417,7 +435,15 @@ showFile(index) {
           e.preventDefault();
           this.searchStep(true, view);
         }
+        if (e.key === 'Escape') {
+          this.state.searchPanelOpen = false;
+        }
       }, true);
+      const closeBtn = panel.querySelector('button[name="close"]');
+      if (closeBtn && !closeBtn.dataset.closeHandled) {
+        closeBtn.addEventListener('click', () => this.state.searchPanelOpen = false);
+        closeBtn.dataset.closeHandled = '1';
+      }
     }
     if (panel.parentNode !== searchPanelContainer) {
       searchPanelContainer.appendChild(panel);
@@ -491,11 +517,23 @@ showFile(index) {
     this.elements.windowBtn.textContent = isFull ? '🗗' : '🗖';
   },
 
+  async toggleFullScreen() {
+    const shouldEnable = !this.state.isFullscreen;
+    if (shouldEnable && this.state.isFullWindow) {
+      await this.toggleFullWindow();
+    }
+    if (shouldEnable) {
+      await this.elements.container.requestFullscreen();
+    } else if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    }
+    this.updateFullscreenButton(shouldEnable);
+  },
+
   async toggleFullWindow() {
     const shouldEnable = !this.state.isFullWindow;
     if (shouldEnable && this.state.isFullscreen) {
-      const isFull = await window.api.toggleFullScreen();
-      this.updateFullscreenButton(isFull);
+      await this.toggleFullScreen();
     }
     this.updateFullWindowButton(shouldEnable);
     this.elements.container.classList.toggle('fullwindow', shouldEnable);
