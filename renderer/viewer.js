@@ -105,6 +105,7 @@ const CodeViewer = {
     this.elements.searchBtn.addEventListener('click', () => this.openSearch());
     this.elements.windowBtn.addEventListener('click', () => this.toggleFullWindow());
     this.elements.fullscreenBtn.addEventListener('click', () => this.toggleFullScreen());
+
     document.addEventListener('keydown', (e) => {
       if (e.altKey && e.key === 'Enter') {
         e.preventDefault();
@@ -113,18 +114,26 @@ const CodeViewer = {
       }
       if (e.key === 'Escape') {
         if (this.state.searchPanelOpen) {
+          e.preventDefault();
           this.closeSearch();
           return;
         }
         if (this.state.isFullscreen) {
+          e.preventDefault();
           this.toggleFullScreen();
           return;
         }
         if (this.state.isFullWindow) {
+          e.preventDefault();
           this.toggleFullWindow();
         }
       }
     }, true);
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFull = document.fullscreenElement === this.elements.container;
+      this.updateFullscreenButton(isFull);
+    });
     // Сохраняем позицию скролла при прокрутке в режиме одного файла
     this.elements.content.addEventListener('scroll', () => {
         if (this.state.viewMode === 'single' && this.state.currentFileIndex !== -1) {
