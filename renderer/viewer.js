@@ -447,6 +447,7 @@ showFile(index) {
       label.append(cb, ' ', this.t('search_all_files_label'));
       wordLabel.insertAdjacentElement('afterend', label);
       panel.dataset.extraAdded = '1';
+
       const input = panel.querySelector('[main-field]');
       if (input) {
         input.addEventListener('input', () => {
@@ -500,6 +501,7 @@ showFile(index) {
     if (!view) return;
     const panel = searchPanelContainer.querySelector('.cm-search');
     if (!panel) return;
+
     const input = panel.querySelector('[main-field]');
     const query = (input ? input.value : this.state.searchQuery) || '';
     this.state.searchQuery = query;
