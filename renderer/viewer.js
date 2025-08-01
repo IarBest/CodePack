@@ -418,10 +418,23 @@ showFile(index) {
     this.state.searchPanelOpen = false;
   },
 
-  patchSearchPanel(view) {
-    let panel = searchPanelContainer.querySelector('.cm-search');
-    if (!panel) panel = view.dom.querySelector('.cm-search');
-    if (!panel) return;
+  patchSearchPanel(view, attempt = 0) {
+    const panel = searchPanelContainer.querySelector('.cm-search');
+    if (!panel) {
+      if (attempt < 10) {
+        setTimeout(() => this.patchSearchPanel(view, attempt + 1), 50);
+      }
+      return;
+    }
+
+    const wordLabel = panel.querySelector('input[name="word"]')?.parentElement;
+    if (!wordLabel) {
+      if (attempt < 10) {
+        setTimeout(() => this.patchSearchPanel(view, attempt + 1), 50);
+      }
+      return;
+    }
+
     if (!panel.dataset.extraAdded) {
       const label = document.createElement('label');
       const cb = document.createElement('input');
@@ -432,8 +445,9 @@ showFile(index) {
         window.api.setConfig({ key: 'split.searchAllFiles', value: cb.checked });
       });
       label.append(cb, ' ', this.t('search_all_files_label'));
-      panel.appendChild(label);
+      wordLabel.insertAdjacentElement('afterend', label);
       panel.dataset.extraAdded = '1';
+
       const input = panel.querySelector('[main-field]');
       if (input) {
         input.addEventListener('input', () => {
@@ -485,9 +499,9 @@ showFile(index) {
 
   searchStep(forward, view) {
     if (!view) return;
-    let panel = searchPanelContainer.querySelector('.cm-search');
-    if (!panel) panel = view.dom.querySelector('.cm-search');
+    const panel = searchPanelContainer.querySelector('.cm-search');
     if (!panel) return;
+
     const input = panel.querySelector('[main-field]');
     const query = (input ? input.value : this.state.searchQuery) || '';
     this.state.searchQuery = query;
