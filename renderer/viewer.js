@@ -419,7 +419,8 @@ showFile(index) {
   },
 
   patchSearchPanel(view) {
-    const panel = view.dom.querySelector('.cm-search');
+    let panel = searchPanelContainer.querySelector('.cm-search');
+    if (!panel) panel = view.dom.querySelector('.cm-search');
     if (!panel) return;
     if (!panel.dataset.extraAdded) {
       const label = document.createElement('label');
@@ -484,7 +485,8 @@ showFile(index) {
 
   searchStep(forward, view) {
     if (!view) return;
-    const panel = view.dom.querySelector('.cm-search');
+    let panel = searchPanelContainer.querySelector('.cm-search');
+    if (!panel) panel = view.dom.querySelector('.cm-search');
     if (!panel) return;
     const input = panel.querySelector('[main-field]');
     const query = (input ? input.value : this.state.searchQuery) || '';
