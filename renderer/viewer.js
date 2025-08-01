@@ -419,7 +419,7 @@ showFile(index) {
   },
 
   patchSearchPanel(view, attempt = 0) {
-    const panel = view.dom.querySelector('.cm-search');
+    const panel = searchPanelContainer.querySelector('.cm-search');
     if (!panel) {
       if (attempt < 10) {
         setTimeout(() => this.patchSearchPanel(view, attempt + 1), 50);
@@ -498,7 +498,7 @@ showFile(index) {
 
   searchStep(forward, view) {
     if (!view) return;
-    const panel = view.dom.querySelector('.cm-search');
+    const panel = searchPanelContainer.querySelector('.cm-search');
     if (!panel) return;
     const input = panel.querySelector('[main-field]');
     const query = (input ? input.value : this.state.searchQuery) || '';

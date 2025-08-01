@@ -19,7 +19,8 @@ Alt+Enter hotkey. The Escape key now closes the search panel before exiting
 fullscreen. Search panel code now waits for the panel DOM to mount and retries
 until the "whole word" option is available before inserting the "search in all
 files" checkbox. The checkbox is inserted right after that option for a more
-natural layout.
+natural layout. The patch now looks for the panel in the dedicated search
+container instead of inside the editor DOM so the checkbox reliably appears.
 
 ## Planned Work
 
