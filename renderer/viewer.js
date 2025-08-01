@@ -573,10 +573,14 @@ showFile(index) {
     if (shouldEnable && this.state.isFullWindow) {
       await this.toggleFullWindow();
     }
-    if (shouldEnable) {
-      await this.elements.container.requestFullscreen();
-    } else if (document.fullscreenElement) {
-      await document.exitFullscreen();
+    try {
+      if (shouldEnable) {
+        await this.elements.container.requestFullscreen();
+      } else if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Fullscreen error', err);
     }
     this.updateFullscreenButton(shouldEnable);
   },
