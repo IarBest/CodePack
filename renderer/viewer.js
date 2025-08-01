@@ -181,6 +181,8 @@ updateActiveHighlight(filePath) {
   },
 
   loadContent(parsedFiles) {
+  const reopenSearch = this.state.searchPanelOpen;
+  if (reopenSearch) this.closeSearch();
   this.updateActiveHighlight(null);
   this.state.editors.forEach(ed => ed.destroy());
   this.state.editors = [];
@@ -211,6 +213,10 @@ updateActiveHighlight(filePath) {
         this.elements.container.style.display = 'none';
     }
     this.updateHeaderUI();
+    if (reopenSearch) {
+      this.state.searchPanelOpen = true;
+      this.openSearch();
+    }
   },
 
   renderAllFiles() {
@@ -272,6 +278,8 @@ updateActiveHighlight(filePath) {
 
 showFile(index) {
       if (index < 0 || index >= this.state.files.length) return;
+      const reopenSearch = this.state.searchPanelOpen;
+      if (reopenSearch) this.closeSearch();
       this.state.currentFileIndex = index;
       const file = this.state.files[index];
 
@@ -300,7 +308,8 @@ showFile(index) {
       });
       view.focus();
       this.updateHeaderUI();
-      if (this.state.searchPanelOpen) {
+      if (reopenSearch) {
+        this.state.searchPanelOpen = true;
         this.openSearch();
       }
   },
