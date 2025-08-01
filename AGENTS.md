@@ -17,7 +17,9 @@ CodeMirror viewer with navigation and search. The fullscreen button now expands
 only the code viewer with a smooth 0.2s animation and can be toggled via the
 Alt+Enter hotkey. The Escape key now closes the search panel before exiting
 fullscreen. Search panel code was updated to reliably show the "search in all
-files" checkbox by waiting for the panel DOM to mount before patching it.
+files" checkbox by waiting for the panel DOM to mount before patching it. The
+checkbox now appears directly after the "whole word" option in the search panel
+for a more natural layout.
 
 ## Planned Work
 

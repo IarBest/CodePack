@@ -436,7 +436,12 @@ showFile(index) {
         window.api.setConfig({ key: 'split.searchAllFiles', value: cb.checked });
       });
       label.append(cb, ' ', this.t('search_all_files_label'));
-      panel.appendChild(label);
+      const word = panel.querySelector('input[name="word"]');
+      if (word && word.parentElement) {
+        word.parentElement.insertAdjacentElement('afterend', label);
+      } else {
+        panel.appendChild(label);
+      }
       panel.dataset.extraAdded = '1';
       const input = panel.querySelector('[main-field]');
       if (input) {
