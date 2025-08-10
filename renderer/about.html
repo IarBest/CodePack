@@ -12,10 +12,12 @@
     .version { opacity: 0.7; margin-bottom: 20px; }
     .info-block { font-size: 12px; margin-bottom: 20px; }
     .info-block strong { display: block; margin-bottom: 3px; }
+    .email-block { font-size: 13px; margin-bottom: 20px; }
     .description { text-align: justify; margin-bottom: 25px; font-size: 13.5px; }
-    .button-container { display: flex; flex-direction: column; gap: 10px; }
+    .button-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     button { background-color: var(--btn-bg); color: var(--fg); border: 1px solid var(--border); padding: 10px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background-color 0.2s; font-size: 14px; }
     button:hover { background-color: var(--btn-hover); }
+    #emailBtn { grid-column: 1 / -1; } /* Кнопка почты на всю ширину */
   </style>
 </head>
 <body>
@@ -33,15 +35,21 @@
     <span data-i18n="about_license_text"></span>
   </div>
 
+  <div class="email-block">
+      <p data-i18n="about_email_text"></p>
+  </div>
+
   <div class="description">
     <p data-i18n="about_description_p1"></p>
     <p data-i18n="about_description_p2"></p>
   </div>
 
   <div class="button-container">
+    <button id="websiteBtn" data-i18n="about_btn_website"></button>
     <button id="repoBtn" data-i18n="about_btn_repo"></button>
     <button id="emailBtn" data-i18n="about_btn_email"></button>
-    <button id="donateBtn" data-i18n="about_btn_donate"></button>
+    <button id="paypalBtn" data-i18n="about_btn_donate_paypal"></button>
+    <button id="boostyBtn" data-i18n="about_btn_donate_boosty"></button>
   </div>
 
   <script src="about.js"></script>

@@ -114,12 +114,15 @@
   "about_new_title": "Despre CodePack",
   "about_version": "Versiune: v1.2.0",
   "about_author_label": "Autor:",
-  "about_author_name": "Iaroslav “Iar Best” Vișnevschii",
+  "about_author_name": "Iaroslav «Iar Best» Vișnevschii",
   "about_license_label": "Licență:",
-  "about_license_text": "Gratuit; copierea și modificările sunt permise cu condiția indicării sursei originale (Iaroslav “Iar Best” Vișnevschii / iarbest.ru). Utilizează Electron și CodeMirror.",
-  "about_description_p1": "Programul este complet gratuit și este primul meu program - am încercat să gândesc fiecare element. Dacă ceva nu funcționează sau credeți că poate fi îmbunătățit, vă rog să-mi scrieți un e-mail.",
-  "about_description_p2": "Dacă aveți dorința și posibilitatea, mă puteți mulțumi transferând orice sumă. Chiar și o jumătate de dolar mă va face puțin mai fericit și mai recunoscător 🙂 Dar acest lucru nu este deloc obligatoriu - programul este gratuit ;)",
-  "about_btn_repo": "Site / Repozitoriu",
-  "about_btn_email": "Trimite un e-mail",
-  "about_btn_donate": "Susține autorul"
+  "about_license_text": "Gratuit; copierea și modificarea sunt permise cu condiția creditării sursei originale (Iaroslav “Iar Best” Vișnevschii / iarbest.ru). Utilizează Electron și CodeMirror.",
+  "about_email_text": "Email de contact: iar_best@mail.ru • iarestus@gmail.com",
+  "about_description_p1": "Programul este complet gratuit și este primul meu program — am încercat să gândesc fiecare element. Dacă ceva nu funcționează sau, în opinia dumneavoastră, poate fi îmbunătățit — vă rog să-mi scrieți un email.",
+  "about_description_p2": "Dacă aveți dorința și posibilitatea — mă puteți mulțumi transferând orice sumă. Chiar și o jumătate de dolar mă va face puțin mai fericit și mai recunoscător 🙂 Dar acest lucru este complet opțional — programul este gratuit ;)",
+  "about_btn_website": "Site personal (iarbest.ru)",
+  "about_btn_repo": "Depozit (GitHub)",
+  "about_btn_email": "Trimite un email",
+  "about_btn_donate_paypal": "Susține (PayPal)",
+  "about_btn_donate_boosty": "Susține (Boosty)"
 }

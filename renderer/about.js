@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.title = translations.about_new_title || 'About';
 
   // Назначаем действия кнопкам
+  document.getElementById('websiteBtn').addEventListener('click', () => {
+    window.api.openExternalLink('https://iarbest.ru');
+  });
+
   document.getElementById('repoBtn').addEventListener('click', () => {
     window.api.openExternalLink('https://github.com/IarBest/CodePack');
   });
@@ -24,8 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.api.openExternalLink('mailto:iar_best@mail.ru');
   });
 
-  document.getElementById('donateBtn').addEventListener('click', () => {
-    // Вы можете выбрать одну основную ссылку или дать выбор
+  document.getElementById('paypalBtn').addEventListener('click', () => {
     window.api.openExternalLink('https://paypal.me/iarbest');
+  });
+
+  document.getElementById('boostyBtn').addEventListener('click', () => {
+    window.api.openExternalLink('https://boosty.to/iarbest');
   });
 });
