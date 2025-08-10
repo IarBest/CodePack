@@ -43,6 +43,7 @@ function t(key, replacements = {}) {
 
 let Store;
 let mainWindow;
+let helpWindow;
 
 import('electron-store').then(storeModule => {
   Store = storeModule.default;
@@ -64,7 +65,7 @@ const dateFormats = [
 function createMenu(store, win) {
   const currentLang = store.get('language', 'ru');
   const currentFormat = store.get('ui.dateFormat', 'dd-mm-yyyy');
-  const currentTheme = store.get('ui.theme', 'dark');
+  const currentTheme = store.get('ui.theme', 'light');
   const formatSubmenu = dateFormats.map(format => ({
     label: t(format.labelKey),
     type: 'radio',
@@ -140,6 +141,11 @@ function createMenu(store, win) {
         label: t('menu_help'),
         submenu: [
             {
+              label: t('menu_instruction'),
+              click: () => openHelpWindow(store)
+            },
+            { type: 'separator' },
+            {
                 label: t('menu_about'),
                 click: () => {
                     dialog.showMessageBox(win, {
@@ -158,10 +164,29 @@ function createMenu(store, win) {
   Menu.setApplicationMenu(menu);
 }
 
+  function openHelpWindow(storeInstance) {
+    if (helpWindow && !helpWindow.isDestroyed()) {
+      helpWindow.focus();
+      return;
+    }
+    helpWindow = new BrowserWindow({
+      width: 900,
+      height: 700,
+      webPreferences: {
+        contextIsolation: true,
+        sandbox: true,
+        nodeIntegration: false
+      }
+    });
+    const lang = storeInstance.get('language', 'ru');
+    helpWindow.loadFile('instruction.html', { query: { lang } });
+    helpWindow.on('closed', () => { helpWindow = null; });
+  }
+
 function initializeApp(store) {
   const createWindow = () => {
     mainWindow = new BrowserWindow({
-      width: 900,
+      width: 1000,
       height: 800,
       minWidth: 700,
       minHeight: 600,
@@ -282,7 +307,45 @@ function initializeApp(store) {
     }
   });
 
-  ipcMain.handle('files:merge', async (_, options) => {
+  ipcMain.handle('files:analyze', async (_, filePaths) => {
+    const results = [];
+    // Список расширений, которые считаем текстовыми
+    const textExtensions = new Set([
+        '.txt', '.md', '.json', '.js', '.jsx', '.ts', '.tsx', 
+        '.html', '.htm', '.css', '.scss', '.less', '.py', '.java', 
+        '.c', '.cpp', '.h', '.cs', '.php', '.rb', '.go', '.rs', 
+        '.xml', '.yml', '.yaml', '.ini', '.log', '.sh', '.bat'
+    ]);
+    // Максимальный размер файла для подсчета строк (например, 15 МБ)
+    const MAX_SIZE_FOR_LINE_COUNT = 15 * 1024 * 1024;
+
+    for (const filePath of filePaths) {
+        try {
+            if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+                const size = fs.statSync(filePath).size;
+                const fileExt = path.extname(filePath).toLowerCase();
+
+                // Проверяем, является ли файл текстовым и не слишком ли он большой
+                if (textExtensions.has(fileExt) && size < MAX_SIZE_FOR_LINE_COUNT) {
+                    const content = fs.readFileSync(filePath, 'utf-8');
+                    const lines = content.split('\n').length;
+                    results.push({ path: filePath, lines, size });
+                } else {
+                    // Для бинарных или слишком больших файлов строки не считаем
+                    results.push({ path: filePath, lines: null, size });
+                }
+            }
+        } catch (error) {
+            console.warn(`Could not analyze file: ${filePath}`, error.message);
+            // В случае ошибки отправляем пустые данные
+            results.push({ path: filePath, lines: null, size: 0 });
+        }
+    }
+    return results;
+});
+
+ // НАЧАЛО НОВОГО КОДА
+ipcMain.handle('files:merge', async (_, options) => {
     let { filesToMerge, outputPath, useAbsolutePaths, addNumber } = options;
     const findCommonBasePath = (paths) => {
         if (!paths || paths.length === 0) return '';
@@ -307,7 +370,7 @@ function initializeApp(store) {
         return { success: false, message: 'Не выбраны файлы для объединения.' };
     }
 
-    let outputText = '';
+    let outputText = '\uFEFF';
     const basePath = useAbsolutePaths ? '' : findCommonBasePath(filesToMerge);
 
     for (const filePath of filesToMerge) {
@@ -328,28 +391,64 @@ function initializeApp(store) {
     }
 
     let finalPath = outputPath;
-    const dir = path.dirname(finalPath);
-    const ext = path.extname(finalPath);
-    let baseName = path.basename(finalPath, ext);
-
+    
     if (addNumber) {
+        const dir = path.dirname(outputPath);
+        const ext = path.extname(outputPath);
+        let baseNameWithAdditions = path.basename(outputPath, ext);
+
+        // --- 1. Разбираем имя файла на части ---
         let comment = '';
-        const commentMatch = baseName.match(/\s*\[[^\]]*\]\s*$/);
+        const commentMatch = baseNameWithAdditions.match(/\s*(\[[^\]]*\])\s*$/);
         if (commentMatch) {
-            comment = commentMatch[0];
-            baseName = baseName.replace(/\s*\[[^\]]*\]\s*$/, '');
+            comment = commentMatch[1]; // Запоминаем комментарий, например, "[рефакторинг]"
+            baseNameWithAdditions = baseNameWithAdditions.replace(commentMatch[0], '');
         }
-        baseName = baseName.replace(/\s-\s.*$/, '');
-        let counter = 0;
-        let candidate;
-        do {
-            const suffix = counter > 0 ? `(${counter})` : '';
-            candidate = path.join(dir, `${baseName}${suffix}${comment}${ext}`);
-            counter++;
-        } while (fs.existsSync(candidate));
-        finalPath = candidate;
-    } else if (fs.existsSync(finalPath)) {
+
+        let timestamp = '';
+        const timestampMatch = baseNameWithAdditions.match(/\s*(-\s.*)$/);
+        if (timestampMatch) {
+            timestamp = timestampMatch[1]; // Запоминаем временную метку
+            baseNameWithAdditions = baseNameWithAdditions.replace(timestampMatch[0], '');
+        }
+        
+        // Всё, что осталось (без старого номера) - это чистое базовое имя
+        const cleanBaseName = baseNameWithAdditions.replace(/\s*\(\d+\)$/, '').trim();
+
+        // --- 2. Сканируем папку и ищем максимальный номер ---
+        const filesInDir = fs.readdirSync(dir);
+        const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Регулярное выражение для поиска файлов вида: "база(число).расширение" или "база.расширение"
+        const searchRegex = new RegExp(`^${escapeRegExp(cleanBaseName)}(?:\\s*\\((\\d+)\\))?.*${escapeRegExp(ext)}$`);
+
+        let maxNumber = -1;
+        // Проверяем, существует ли файл без номера (он считается №0)
+        if (fs.existsSync(path.join(dir, `${cleanBaseName}${ext}`))) {
+            maxNumber = 0;
+        }
+
+        for (const fileName of filesInDir) {
+            const match = fileName.match(searchRegex);
+            if (match && match[1]) { // Если в имени файла было число в скобках
+                const currentNumber = parseInt(match[1], 10);
+                if (currentNumber > maxNumber) {
+                    maxNumber = currentNumber;
+                }
+            }
+        }
+        
+        const newCounter = maxNumber + 1;
+        const numberSuffix = newCounter > 0 ? ` (${newCounter})` : '';
+
+        // --- 3. Собираем новое, корректное имя файла ---
+        finalPath = path.join(dir, `${cleanBaseName}${timestamp}${comment}${numberSuffix}${ext}`);
+        
+    } else if (fs.existsSync(outputPath)) {
+        // Эта логика остаётся для случаев, когда нумерация выключена, но файл с таким именем уже есть
         let counter = 1;
+        const dir = path.dirname(outputPath);
+        const ext = path.extname(outputPath);
+        const baseName = path.basename(outputPath, ext);
         do {
             finalPath = path.join(dir, `${baseName}(${counter})${ext}`);
             counter++;
@@ -358,7 +457,8 @@ function initializeApp(store) {
     
     fs.writeFileSync(finalPath, outputText);
     return { success: true, outputPath: finalPath };
-  });
+});
+// КОНЕЦ НОВОГО КОДА
 
   ipcMain.handle('files:split', async (_, { filesToCreate, outputDir }) => {
     try {

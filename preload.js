@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('api', {
   // Файловые операции
   getDirectoryTree: (options) => ipcRenderer.invoke('files:getDirectoryTree', options),
   isDirectory: (path) => ipcRenderer.invoke('fs:isDirectory', path),
+  analyzeFiles: (paths) => ipcRenderer.invoke('files:analyze', paths),
   mergeFiles: (options) => ipcRenderer.invoke('files:merge', options),
   splitFiles: (options) => ipcRenderer.invoke('files:split', options),
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),

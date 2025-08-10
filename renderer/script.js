@@ -1,3 +1,9 @@
+// Отладочный блок (выключен по умолчанию)
+const DEBUG_MODE = false;
+const DEBUG_PATH = '';
+const DEBUG_CALCS = false;
+const logNodeState = () => {};
+
 const showToast = (message, type = 'info', duration = 4000) => {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -22,7 +28,7 @@ const showToast = (message, type = 'info', duration = 4000) => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // --- НАЧАЛО БЛОКА ЛОКАЛИЗАЦИИ ---
+  // Локализация
   let t;
 
   const applyTranslations = async (translations) => {
@@ -52,10 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
         el.title = t(el.getAttribute('data-i18n-tooltip'));
     });
     // Обновляем динамические элементы
-    updateFileCount();
+    updateTotals();
     renderSplitTree(splitFileTreeData); // Перерисовываем дерево разборки с новыми переводами
     
-    // --- НАЧАЛО БЛОКА ФЛАГОВ ---
+    // Флаги в переключателе языка
     const flagImg = document.getElementById('lang-flag');
     const currentLang = await window.api.getConfig('language', 'ru');
     const altFlagActive = alternateFlagsState[currentLang];
@@ -78,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const roAltActive = alternateFlagsState['ro'];
         langLi.textContent = roAltActive ? 'Moldovenească' : 'Română';
     }
-    // --- КОНЕЦ БЛОКА ФЛАГОВ ---
+    // Конец блока флагов
     CodeViewer.updateUiForLanguage(t);
     CodeViewer.setPhrases({
         'Find': t('search_find'),
@@ -94,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'close': t('search_close')
     });
   };
-  // --- КОНЕЦ БЛОКА ЛОКАЛИЗАЦИИ ---
+  // Конец блока локализации
 
   const settingsToPersist = {
     '#validExtensions': 'merge.validExtensions',
@@ -107,7 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
     '#excludeNodeModules': 'merge.excludeNodeModules',
     '#excludeUserData': 'merge.excludeUserData',
     '#startDelimiter': 'split.startDelimiter',
-    '#endDelimiter': 'split.endDelimiter'
+    '#endDelimiter': 'split.endDelimiter',
+    '_checkedPaths': 'merge.checkedPaths'
   };
   const defaultSettings = {
       extensions: '.js, .jsx, .ts, .tsx, .html, .css, .scss, .json, .md, .py',
@@ -126,8 +133,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let alternateFlagsState = {};
   let flagClickCounter = 0;
   let flagClickTimer = null;
-
- const formatTimestampForFilename = async (date) => {
+  let currentSearchIndex = -1;
+  let searchResults = [];
+  
+  const formatTimestampForFilename = async (date) => {
     const format = await window.api.getConfig('ui.dateFormat', 'dd-mm-yyyy');
     const translations = await window.api.getTranslations();
 
@@ -158,6 +167,36 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${dateString}, ${hh}-${mm}`;
 };
 
+const formatSize = (bytes) => {
+    if (bytes === 0) return '0 KB';
+    const kb = bytes / 1024;
+    return `${kb.toFixed(1)} KB`;
+};
+
+const calculateFolderStats = (nodes) => {
+    nodes.forEach(node => {
+        if (node.type === 'dir' && node.children) {
+            calculateFolderStats(node.children);
+            
+            node.lines = node.children.reduce((sum, child) => {
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                // Мы включаем статистику дочернего элемента, если он отмечен ИЛИ находится в неопределенном состоянии.
+                // Это гарантирует, что частично выбранные папки тоже вносят свой вклад в родительскую.
+                const shouldInclude = child.checked || child.indeterminate;
+                const linesToAdd = shouldInclude && child.lines ? child.lines : 0;
+                return sum + linesToAdd;
+            }, 0);
+
+            node.size = node.children.reduce((sum, child) => {
+                // --- И ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                const shouldInclude = child.checked || child.indeterminate;
+                const sizeToAdd = shouldInclude && child.size ? child.size : 0;
+                return sum + sizeToAdd;
+            }, 0);
+        }
+    });
+};
+
   const autoResizeTextarea = (el) => {
     if (!el) return;
     el.style.height = 'auto';
@@ -165,44 +204,51 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   
   let splitRenderTimeout;
-  const parseAndRenderSplitTree = (content) => {
+  const parseAndRenderSplitTree = (content, filePath) => {
     clearTimeout(splitRenderTimeout);
     splitRenderTimeout = setTimeout(() => {
       if (!content.trim()) {
         splitFileTreeData = [];
-        renderSplitTree([]);
+        renderSplitTree([], null);
         return;
       }
       
       const files = parseInputToFiles(content);
       if (files.length > 0) {
         splitFileTreeData = buildTreeFromFlatPaths(files);
+        calculateFolderStats(splitFileTreeData);
         sortTree(splitFileTreeData);
       } else {
         splitFileTreeData = [];
       }
-      renderSplitTree(splitFileTreeData);
+      renderSplitTree(splitFileTreeData, filePath);
 	  CodeViewer.loadContent(getAllNodesRecursive(splitFileTreeData));
     }, 300);
   };
-  const parseInputToFiles = (content) => {
+const parseInputToFiles = (content) => {
     const startDelimiter = document.getElementById('startDelimiter').value;
     const endDelimiter = document.getElementById('endDelimiter').value;
     const endFileMarker = '//======= END FILE =======';
     const files = [];
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     const regex = new RegExp(
-      `${escapeRegExp(startDelimiter)}(.*?)${escapeRegExp(endDelimiter)}\\r?\\n([\\s\\S]*?)(?=\\r?\\n${escapeRegExp(endFileMarker)}|$)`, 'g'
+      `(?:^|\\r?\\n)${escapeRegExp(startDelimiter)}(.*?)${escapeRegExp(endDelimiter)}\\r?\\n([\\s\\S]*?)(?=\\r?\\n${escapeRegExp(endFileMarker)}|$)`, 'g'
     );
+
     for (const match of content.matchAll(regex)) {
+      // Группы захвата теперь сместились на 1, т.к. мы добавили группу в начале.
       const filePath = match[1].trim().replace(/\\/g, '/');
       const fileContent = match[2].trim();
       if (filePath) {
-        files.push({ path: filePath, content: fileContent });
+        const lines = fileContent.split('\n').length;
+        const size = new TextEncoder().encode(fileContent).length;
+        files.push({ path: filePath, content: fileContent, lines, size });
       }
     }
     return files;
   };
+
   const buildTreeFromFlatPaths = (files) => {
     const tree = [];
     const map = new Map();
@@ -219,6 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
            if (isLastPart) {
             node = {
               name: part, path: file.path, type: 'file', content: file.content,
+              lines: file.lines,
+              size: file.size,
               checked: true, isExcluded: false, ext: '.' + part.split('.').pop().toLowerCase()
             };
             map.set(file.path, node);
@@ -238,11 +286,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     return tree;
   };
-  const renderSplitTree = (nodesToRender) => {
+  const renderSplitTree = (nodesToRender, filePath) => {
     const container = document.getElementById('split-file-list-container');
+    const statsContainer = document.getElementById('split-total-stats-text');
+
     if (!nodesToRender || nodesToRender.length === 0) {
       container.innerHTML = `<p class="placeholder">${t('split_files_placeholder')}</p>`;
       document.getElementById('split-file-count').textContent = t('file_count_many', { count: 0 });
+      if (statsContainer) statsContainer.innerHTML = '&nbsp;';
       return;
     }
 
@@ -254,21 +305,33 @@ document.addEventListener('DOMContentLoaded', () => {
         : '';
       const checkboxState = node.checked ? 'checked' : '';
       const ext = isDir ? null : (node.ext || '');
-      const fileActionsHTML = !isDir ? `
+
+      const statsHTML = (node.lines !== undefined && node.size !== undefined) ?
+      `
+        <div class="file-stats">
+            <span class="stat-lines">${node.lines !== undefined ? node.lines.toLocaleString('ru-RU') : ''}</span>
+            <span class="stat-size">${node.size !== undefined ? formatSize(node.size) : ''}</span>
+        </div>
+      ` : '';
+
+      const fileActionsHTML = !isDir ?
+      `
         <div class="file-actions">
           <button class="action-btn" title="${t('copy_content_tooltip')}" data-action="copy" data-path="${node.path}">📋</button>
           <button class="action-btn" title="${t('save_file_as_tooltip')}" data-action="save" data-path="${node.path}">💾</button>
         </div>
       ` : '';
+
       return `<li class="tree-item" data-path="${node.path}">
           <div class="tree-item-content">
               <input type="checkbox" data-path="${node.path}" ${checkboxState}>
               <span class="icon" data-type="${node.type}" data-ext="${ext}">${icon}</span>
               <span class="name">${node.name}</span>
               ${fileActionsHTML}
+              ${statsHTML}
           </div>
           ${childrenHTML}
-        </li>`;
+      </li>`;
     };
     
     container.innerHTML = `<ul class="file-tree">${nodesToRender.map(createNodeHTML).join('')}</ul>`;
@@ -296,6 +359,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return n;
     })(splitFileTreeData);
     document.getElementById('split-file-count').textContent = formatFileCount(count);
+
+    if (statsContainer) {
+        const allFileNodes = getAllNodesRecursive(splitFileTreeData).filter(n => n.type === 'file');
+        const totalLines = allFileNodes.reduce((sum, file) => sum + (file.lines || 0), 0);
+        const totalSize = allFileNodes.reduce((sum, file) => sum + (file.size || 0), 0);
+        const fileName = filePath ? filePath.split(/[\\/]/).pop() : '';
+        
+        statsContainer.textContent = `${fileName} | Итог: ${totalLines.toLocaleString('ru-RU')} строк, ${formatSize(totalSize)}`;
+    }
+
     if (nodesToRender.length === 0) {
         CodeViewer.loadContent([]);
     }
@@ -377,6 +450,7 @@ const applyBodyTheme = (theme) => {
 const setupEventListeners = async (theme) => {
         applyBodyTheme(theme);
         const searchAll = await window.api.getConfig('split.searchAllFiles', false);
+        const isPanelVisible = await window.api.getConfig('split.isPanelVisible', true);
         CodeViewer.init({
             theme,
             searchAll,
@@ -404,7 +478,7 @@ const setupEventListeners = async (theme) => {
             showLoader(false);
 
             if (result.success) {
-                parseAndRenderSplitTree(result.content);
+                parseAndRenderSplitTree(result.content, filePath);
             } else {
                 showToast(t('alert_read_file_error', { error: result.error }), 'error');
             }
@@ -416,7 +490,7 @@ const setupEventListeners = async (theme) => {
       applyTranslations(newTranslations);
     });
 
-    // --- НАЧАЛО БЛОКА ЛОГИКИ СЕЛЕКТОРА ЯЗЫКА ---
+    // Логика селектора языка
     const populateLangSelector = async () => {
         const availableLangs = await window.api.getAvailableLangs();
         const langList = document.getElementById('lang-list');
@@ -470,7 +544,7 @@ li.addEventListener('click', async () => {
     });
     
     populateLangSelector();
-    // --- КОНЕЦ БЛОКА ЛОГИКИ СЕЛЕКТОРА ЯЗЫКА ---
+    // Конец логики селектора языка
 	
 	const langSelector = document.getElementById('lang-selector');
 langSelector.addEventListener('click', (e) => {
@@ -487,7 +561,7 @@ document.addEventListener('click', (e) => {
   }
 });
     
-    // --- НАЧАЛО БЛОКА ФОРМАТИРОВАНИЯ ИМЕНИ ФАЙЛА ---
+    // Форматирование имени файла
 const updateOutputFilename = async () => {
     const outputPathEl = document.getElementById('outputPath');
     let baseName = outputPathEl.value || 'codepack_output.txt';
@@ -526,7 +600,7 @@ const updateOutputFilename = async () => {
            updateOutputFilename();
         }
     });
-    // --- КОНЕЦ БЛОКА ФОРМАТИРОВАНИЯ ИМЕНИ ФАЙЛА ---
+    // Конец форматирования имени файла
 
     document.querySelector('.tabs').addEventListener('click', (e) => {
       if (e.target.matches('.tab-btn')) switchTab(e.target.dataset.tab);
@@ -642,7 +716,8 @@ const updateOutputFilename = async () => {
       e.preventDefault(); e.stopPropagation();
       dropZone.classList.remove('drag-over');
       const paths = [...e.dataTransfer.files].map(f => f.path);
-      if (paths.length > 0) processSelectedPaths(paths);
+      // Добавляем опцию, чтобы перетаскивание работало как "Добавить", а не "Выбрать"
+      if (paths.length > 0) processSelectedPaths(paths, { forceInclude: true });
     });
     document.getElementById('file-list-container').addEventListener('click', async (e) => {
       const li = e.target.closest('li.tree-item');
@@ -656,7 +731,7 @@ const updateOutputFilename = async () => {
         return;
       }
       if (e.target.matches('input[type="checkbox"]')) {
-        updateTreeState(li.dataset.path, e.target.checked);
+        await updateTreeState(li.dataset.path, e.target.checked);
         return;
       }
       if (e.target.matches('.name')) {
@@ -709,14 +784,14 @@ const updateOutputFilename = async () => {
     // --- ОБРАБОТЧИКИ ДЛЯ ВКЛАДКИ "РАЗБОРКА" ---
     document.getElementById('splitClearBtn').addEventListener('click', () => {
       splitFileTreeData = [];
-      renderSplitTree([]);
+      renderSplitTree([], null);
     });
     document.getElementById('split-file-list-container').addEventListener('click', async (e) => {
       const target = e.target;
       const li = target.closest('.tree-item');
       if (!li) return;
       const path = li.dataset.path;
-      if (target.matches('.name')) {
+      if (target.matches('.name') || target.matches('.icon')) {
         e.preventDefault();
         const node = findNodeByPath(splitFileTreeData, path);
         if (node && node.type === 'file') {
@@ -827,19 +902,58 @@ const updateOutputFilename = async () => {
         }
     });
     document.addEventListener('keydown', (e) => {
+
+          // Поиск на вкладке "Сборка"
+    if (e.ctrlKey && e.key.toLowerCase() === 'f') {
+        if (document.getElementById('merge-tab').classList.contains('active')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            toggleMergeSearch();
+            return;
+        }
+    }
+
+      if (e.ctrlKey && e.key.toLowerCase() === 'e') {
+        if (document.getElementById('split-tab').classList.contains('active')) {
+            e.preventDefault();
+            CodeViewer.toggleFilePanel();
+            return;
+        }
+    }
+
+    // Контекстный Enter
+    if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        const mergeSearchContainer = document.getElementById('merge-search-container');
+        const isMergeSearchVisible = mergeSearchContainer && mergeSearchContainer.style.display === 'flex';
+
+        if (isMergeSearchVisible && document.getElementById('merge-tab').classList.contains('active')) {
+            e.preventDefault();
+            handleSearchInTree(true); // Искать вперед по Enter
+            return;
+        }
+
+        const active = document.activeElement;
+        const insideEditor = active.closest('.cm-editor');
+        const insideSearch = active.closest('.cm-search');
+        if (
+            active.tagName !== 'TEXTAREA' &&
+            active.tagName !== 'INPUT' &&
+            !insideEditor &&
+            !insideSearch
+        ) {
+             e.preventDefault();
+            triggerContextualSave();
+        }
+        return; // Явно выходим, чтобы не было конфликтов
+    }
+
         if (e.ctrlKey && e.key.toLowerCase() === 's') {
             e.preventDefault();
             triggerContextualSave();
             return;
         }
 
-        if (e.altKey && e.key === 'Enter') {
-            if (document.getElementById('split-tab').classList.contains('active')) {
-                e.preventDefault();
-                CodeViewer.toggleFullscreen();
-                return;
-            }
-        }
 
         if (e.ctrlKey && e.key === 'Tab') {
             e.preventDefault();
@@ -852,6 +966,8 @@ const updateOutputFilename = async () => {
         if (e.ctrlKey && e.key.toLowerCase() === 'f') {
             if (document.getElementById('split-tab').classList.contains('active')) {
                 e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
                 CodeViewer.openSearch();
                 return;
             }
@@ -917,17 +1033,72 @@ const updateOutputFilename = async () => {
     await applyTranslations(await window.api.getTranslations());
     await loadSettings();
     alternateFlagsState = (await window.api.getConfig('ui.alternateFlags')) || {};
-    const theme = await window.api.getConfig('ui.theme', 'dark');
+
+      // --- Загружаем сохраненные "принудительные" пути ---
+    const savedForcedPaths = await window.api.getConfig('merge.forcedPaths');
+    if (savedForcedPaths && Array.isArray(savedForcedPaths)) {
+        savedForcedPaths.forEach(p => forcedPaths.add(p));
+    }
+
+    const theme = await window.api.getConfig('ui.theme', 'light');
     await setupEventListeners(theme);
     window.api.onThemeChanged((th) => CodeViewer.setTheme(th));
     document.querySelectorAll('.setting-item textarea').forEach(autoResizeTextarea);
-    const lastPaths = await window.api.getConfig('merge.lastUsedPaths');
-    if (lastPaths && lastPaths.length > 0) {
-        const pathExists = await window.api.pathExists(lastPaths[0]);
-        if (pathExists) {
-            await processSelectedPaths(lastPaths);
+    
+const lastPaths = await window.api.getConfig('merge.lastUsedPaths');
+if (lastPaths && lastPaths.length > 0) {
+    const pathExists = await window.api.pathExists(lastPaths[0]);
+    if (pathExists) {
+        if (DEBUG_MODE) console.log('[START] Начинаем восстановление состояния...');
+        
+        // 1. Строим дерево и применяем к нему фильтры (isExcluded).
+        await processSelectedPaths(lastPaths, { isRestore: true });
+        if (DEBUG_MODE) getAllNodesRecursive(rawFileTree).forEach(n => logNodeState('1. After applyFiltersAndRender', n));
+
+        // 2. Загружаем сохраненное состояние галочек
+        const checkedPaths = await window.api.getConfig('merge.checkedPaths');
+        if (checkedPaths && Array.isArray(checkedPaths)) {
+            if (DEBUG_MODE) console.log('[CONFIG] Загружены checkedPaths:', checkedPaths);
+            const checkedSet = new Set(checkedPaths);
+            const allNodes = getAllNodesRecursive(rawFileTree);
+
+            // 3. Устанавливаем галочки АВТОРИТЕТНО из сохраненного списка
+            allNodes.forEach(node => {
+                node.checked = checkedSet.has(node.path);
+            });
+            if (DEBUG_MODE) getAllNodesRecursive(rawFileTree).forEach(n => logNodeState('2. After applying checkedSet', n));
+            
+            // 4. ✨✨✨ ФИНАЛЬНЫЙ ФИКС ✨✨✨
+            // Принудительно ставим галочки всем дочерним элементам уже отмеченных папок.
+            const setChildrenChecked = (nodes) => {
+                for (const node of nodes) {
+                    if (node.checked && node.type === 'dir' && node.children) {
+                         const recursiveCheck = (n) => {
+                            n.checked = true;
+                            if (n.children) n.children.forEach(recursiveCheck);
+                        };
+                        node.children.forEach(recursiveCheck);
+                    }
+                    if (node.children) {
+                        setChildrenChecked(node.children);
+                    }
+                }
+            }
+            setChildrenChecked(rawFileTree);
+            if (DEBUG_MODE) getAllNodesRecursive(rawFileTree).forEach(n => logNodeState('3. After children propagation', n));
+
+            // 5. Теперь, когда модель данных полностью восстановлена, выполняем всю остальную логику.
+            expandIncludedNodes(rawFileTree);
+            updateAllParentCheckboxes(rawFileTree);
+            if (DEBUG_MODE) getAllNodesRecursive(rawFileTree).forEach(n => logNodeState('4. After updateAllParentCheckboxes', n));
+            
+            calculateFolderStats(rawFileTree);
+            sortTree(rawFileTree);
+            renderFileTree(rawFileTree);
+            if (DEBUG_MODE) console.log('[END] Восстановление состояния завершено.');
         }
     }
+  }
   };
 
   const showLoader = (show) => {
@@ -979,17 +1150,44 @@ const updateOutputFilename = async () => {
     return t('file_count_many', { count });
   };
   
-  const updateFileCount = () => {
-      let count = 0;
-      document.querySelectorAll('#file-list-container li.tree-item').forEach(item => {
-        const checkbox = item.querySelector(':scope > .tree-item-content > input[type="checkbox"]');
-        const icon = item.querySelector(':scope > .tree-item-content > .icon');
-        if (checkbox && checkbox.checked && icon && icon.dataset.type === 'file') {
-          count++;
+const updateTotals = () => {
+    let checkedFileCount = 0;
+    let totalLines = 0;
+    let totalSize = 0;
+
+    const allFileNodes = getAllNodesRecursive(rawFileTree).filter(node => node.type === 'file');
+
+    if (DEBUG_CALCS) console.group(`%cCalculating GRAND TOTAL (updateTotals)`, 'color: red; font-weight: bold');
+
+    allFileNodes.forEach(node => {
+        if (node.checked) {
+            checkedFileCount++;
+            const linesToAdd = node.lines || 0;
+            const sizeToAdd = node.size || 0;
+            totalLines += linesToAdd;
+            totalSize += sizeToAdd;
+            if(DEBUG_CALCS) {
+                console.log(`- File: ${node.path}, adding lines: %c${linesToAdd}`, 'color: green', `, adding size: %c${sizeToAdd}`, 'color: green');
+            }
         }
-      });
-      document.getElementById('file-count').textContent = formatFileCount(count);
-  };
+    });
+
+    if (DEBUG_CALCS) {
+        console.log(`-> Grand Total Result: lines=%c${totalLines}`, 'font-weight: bold', `, size=%c${totalSize}`, 'font-weight: bold');
+        console.groupEnd();
+    }
+
+    // Обновляем счётчик файлов в заголовке
+    document.getElementById('file-count').textContent = formatFileCount(checkedFileCount);
+
+    // Обновляем итоговую статистику
+    const statsTextEl = document.getElementById('total-stats-text');
+    if (totalLines > 0 || totalSize > 0) {
+        statsTextEl.textContent = `Итог: ${totalLines.toLocaleString('ru-RU')} строк, ${formatSize(totalSize)}`;
+    } else {
+         statsTextEl.innerHTML = '&nbsp;';
+    }
+};
 
   const expandIncludedNodes = (nodes) => {
     for (const node of nodes) {
@@ -1001,21 +1199,30 @@ const updateOutputFilename = async () => {
         }
     }
   };
-  const renderFileTree = (nodesToRender) => {
+const renderFileTree = (nodesToRender) => {
     const container = document.getElementById('file-list-container');
     if (!nodesToRender || nodesToRender.length === 0) {
       container.innerHTML = `<p class="placeholder">${t('files_placeholder')}</p>`;
       document.getElementById('sticky-separator')?.classList.remove('visible');
-      updateFileCount();
+      updateTotals(); // Обновляем итоги, чтобы сбросить их
       return;
     }
 
     const createNodeHTML = (node, level, preRenderedChildren = null) => {
         const isDir = node.type === 'dir';
         const icon = isDir ? '📂' : getIconForFile(node.name);
-        const canExpand = isDir;
+        const canExpand = isDir && node.children && node.children.length > 0;
         const toggleIcon = canExpand ? `<span class="toggle-icon">${node.collapsed ? '[+]' : '[-]'}</span>` : '<span class="toggle-icon"></span>';
-        
+
+        const statsHTML = (node.lines !== undefined && node.size !== undefined) ? `
+            <div class="file-stats">
+                <span class="stat-lines">
+                    ${node.lines === null ? '—' : (node.lines !== undefined ? node.lines.toLocaleString('ru-RU') : '')}
+                </span>
+                <span class="stat-size">${node.size !== undefined ? formatSize(node.size) : ''}</span>
+            </div>
+        ` : '';
+
         let childrenHTML = '';
         if (preRenderedChildren) {
             childrenHTML = `<ul style="${node.collapsed ? 'display: none;' : ''}">${preRenderedChildren}</ul>`;
@@ -1023,27 +1230,30 @@ const updateOutputFilename = async () => {
             childrenHTML = `<ul style="${node.collapsed ? 'display: none;' : ''}">${generateNodeListHTML(node.children, level + 1)}</ul>`;
         }
 
-        const liClass = `tree-item ${node.isExcluded ? 'is-excluded' : ''} ${node.collapsed ? 'collapsed' : ''}`;
+        const isVisuallyExcluded = node.isExcluded && !node.checked;
+        const liClass = `tree-item ${isVisuallyExcluded ? 'is-excluded' : ''} ${node.collapsed ? 'collapsed' : ''}`;
         const checkboxState = node.checked ? 'checked' : '';
         const ext = isDir ? null : (node.ext || '');
+
         return `<li class="${liClass}" data-path="${node.path}">
             <div class="tree-item-content">
                 ${toggleIcon}
                 <input type="checkbox" data-path="${node.path}" ${checkboxState}>
                 <span class="icon" data-type="${node.type}" data-ext="${ext}">${icon}</span>
                 <span class="name">${node.name}</span>
+                ${statsHTML}
             </div>
             ${childrenHTML}
         </li>`;
     };
-    
+
     const generateNodeListHTML = (nodes, level = 0) => {
+        // ... остальной код этой вложенной функции НЕ МЕНЯЕТСЯ ...
         if (level === 0 && nodes.length === 1 && nodes[0].type === 'dir') {
             const rootNode = nodes[0];
             const childrenListHTML = generateNodeListHTML(rootNode.children, level + 1);
             return createNodeHTML(rootNode, level, childrenListHTML);
         }
-
         const firstExcludedIndex = nodes.findIndex(node => node.isExcluded);
         if (firstExcludedIndex < 0) {
             return nodes.map(node => createNodeHTML(node, level)).join('');
@@ -1053,7 +1263,6 @@ const updateOutputFilename = async () => {
         if (includedNodes.length === 0 || excludedNodes.length === 0) {
             return nodes.map(node => createNodeHTML(node, level)).join('');
         }
-
         return `
             ${includedNodes.map(node => createNodeHTML(node, level)).join('')}
             <li class="separator-line"></li>
@@ -1081,9 +1290,10 @@ const updateOutputFilename = async () => {
             }
         }
     });
-    
-    updateFileCount();
 
+    updateTotals(); // <-- ВАЖНО: Заменена updateFileCount на updateTotals
+
+    // ... остальной код функции для IntersectionObserver НЕ МЕНЯЕТСЯ ...
     const realSeparator = container.querySelector('.separator-line');
     const stickySeparator = document.getElementById('sticky-separator');
     if (treeObserver) {
@@ -1092,7 +1302,6 @@ const updateOutputFilename = async () => {
     if (stickySeparator) {
         stickySeparator.classList.remove('visible');
     }
-
     if (realSeparator && stickySeparator) {
         treeObserver = new IntersectionObserver((entries) => {
           const [entry] = entries;
@@ -1109,7 +1318,7 @@ const updateOutputFilename = async () => {
           });
         };
     }
-  };
+};
   
   const toggleAllNodes = (isCollapsed) => {
     if (rawFileTree.length === 0) return;
@@ -1127,23 +1336,41 @@ const updateOutputFilename = async () => {
     renderFileTree(rawFileTree);
   };
 
-  const sortTree = (nodes) => {
+   const sortTree = (nodes) => {
     if (!nodes) return;
     nodes.sort((a, b) => {
-      if (a.isExcluded !== b.isExcluded) {
-        return a.isExcluded ? 1 : -1;
-      }
-      if (a.type !== b.type) {
-        return a.type === 'dir' ? -1 : 1;
-      }
-      return a.name.localeCompare(b.name);
+        // Правило 1: Неактивные (isExcluded) элементы всегда в самом низу.
+        if (a.isExcluded !== b.isExcluded) {
+            return a.isExcluded ? 1 : -1;
+        }
+
+        // Учитываем принудительно включённые пути (forcedPaths)
+        // Правило 2: Новые или принудительно добавленные элементы всегда наверху.
+        const aIsPriority = (a.isNew ?? false) || forcedPaths.has(a.path);
+        const bIsPriority = (b.isNew ?? false) || forcedPaths.has(b.path);
+
+        if (aIsPriority !== bIsPriority) {
+            return aIsPriority ? -1 : 1;
+        }
+        // Конец учета принудительно включённых путей
+
+        // Правило 3: Сортировка по типу (папки, затем файлы).
+        if (a.type !== b.type) {
+            return a.type === 'dir' ? -1 : 1;
+        }
+
+        // Правило 4: Сортировка по имени (в алфавитном порядке).
+        return a.name.localeCompare(b.name);
     });
+
+    // После сортировки очищаем временные метки и рекурсивно сортируем дочерние узлы.
     nodes.forEach(node => {
-      if (node.children) {
-        sortTree(node.children);
-      }
+        if (node.isNew) delete node.isNew;
+        if (node.children) {
+            sortTree(node.children);
+        }
     });
-  };
+};
 
   const findNodeByPath = (nodes, path) => {
     for (const node of nodes) {
@@ -1183,7 +1410,7 @@ const updateAllParentCheckboxes = (nodes) => {
         return node.checked;
       }
 	  
-      // ИЗМЕНЕНИЕ: Мы больше не фильтруем по isExcluded, 
+      // Больше не фильтруем по isExcluded, 
       // а смотрим на все дочерние элементы, как и должно быть в дереве.
       const childStates = node.children.map(child => recursiveUpdate(child));
       const allChildrenChecked = childStates.every(state => state === true);
@@ -1208,34 +1435,78 @@ const updateAllParentCheckboxes = (nodes) => {
   
   let rawFileTree = [];
   const forcedPaths = new Set();
-  const applyFiltersAndRender = () => {
+const applyFiltersAndRender = (options = {}) => {
+    const { replace = false, isRestore = false } = options;
     const excludeNodeModules = document.getElementById('excludeNodeModules').checked;
     const excludeUserData = document.getElementById('excludeUserData').checked;
     const ignorePatterns = document.getElementById('ignorePatterns').value.split(',').map(p => p.trim()).filter(Boolean);
     const validExtensions = document.getElementById('validExtensions').value.split(',').map(p => p.trim()).filter(Boolean);
     const processNode = (node, isParentExcluded = false, parentForced = false) => {
-        const forced = parentForced || forcedPaths.has(node.path);
+        const forced = forcedPaths.has(node.path);
         const isIgnoredByName = ignorePatterns.some(pattern => pattern && node.name === pattern);
         const isNodeModulesFolder = excludeNodeModules && node.name === 'node_modules';
         const isUserDataFolder = excludeUserData && node.name === 'user-data';
         const isInvalidExtension = node.type === 'file' && !validExtensions.includes(node.ext);
         node.isExcluded = forced ? false : (isParentExcluded || isIgnoredByName || isNodeModulesFolder || isUserDataFolder || isInvalidExtension);
-        node.checked = !node.isExcluded;
+        
         node.indeterminate = false;
+
         if (node.children) {
-            node.children.forEach(child => processNode(child, node.isExcluded, forced));
+            const childForced = forced || (node.type === 'dir' && forcedPaths.has(node.path));
+            node.children.forEach(child => processNode(child, node.isExcluded, childForced));
         }
     };
 
     rawFileTree.forEach(node => processNode(node, false, forcedPaths.has(node.path)));
+    
+    // В режиме восстановления останавливаемся здесь.
+    // Всю последующую логику будет выполнять функция init после восстановления галочек.
+    if (isRestore) {
+        return;
+    }
+    
+    // Этот блок выполняется только при «живых» изменениях (не при запуске)
+    if (!options.isRestore) {
+        getAllNodesRecursive(rawFileTree).forEach(node => {
+            if (node.isNew) {
+                node.checked = !node.isExcluded;
+            }
+        });
+    }
+
     expandIncludedNodes(rawFileTree);
     updateAllParentCheckboxes(rawFileTree);
+    calculateFolderStats(rawFileTree);
     sortTree(rawFileTree);
     renderFileTree(rawFileTree);
   };
-  const updateTreeState = (path, isChecked) => {
+
+const updateTreeState = async (path, isChecked) => {
     const node = findNodeByPath(rawFileTree, path);
     if (!node) return;
+        // --- Анализ по требованию ---
+    if (isChecked) {
+        const nodesToAnalyze = getAllNodesRecursive([node]).filter(n => n.type === 'file' && n.lines === undefined);
+        const pathsToAnalyze = nodesToAnalyze.map(n => n.path);
+
+        if (pathsToAnalyze.length > 0) {
+            showLoader(true);
+            try {
+                const stats = await window.api.analyzeFiles(pathsToAnalyze);
+                const statsMap = new Map(stats.map(s => [s.path, s]));
+
+                nodesToAnalyze.forEach(n => {
+                    const stat = statsMap.get(n.path);
+                    if (stat) {
+                        n.lines = stat.lines;
+                        n.size = stat.size;
+                    }
+                });
+            } finally {
+                showLoader(false);
+            }
+        }
+    }
     const updateChildrenRecursive = (n) => {
       n.checked = isChecked;
       n.indeterminate = false;
@@ -1243,43 +1514,225 @@ const updateAllParentCheckboxes = (nodes) => {
     };
     updateChildrenRecursive(node);
     updateAllParentCheckboxes(rawFileTree);
-    syncTreeUI();
-    updateFileCount();
-  };
+    calculateFolderStats(rawFileTree); 
+    renderFileTree(rawFileTree); 
+    updateTotals();
 
-  const processSelectedPaths = async (paths, options = {}) => {
-    const { replace = false, forceInclude = false } = options;
+    // Сохраняем все отмеченные пути (и файлы, и папки)
+    const checkedPaths = getAllNodesRecursive(rawFileTree)
+      .filter(n => n.checked) // Просто n.checked, без проверки на тип
+      .map(n => n.path);
+    window.api.setConfig({ key: 'merge.checkedPaths', value: checkedPaths });
+};
+
+const processSelectedPaths = async (paths, options = {}) => {
+    const { replace = false, forceInclude = false, isRestore = false } = options;
     showLoader(true);
-    window.api.setConfig({ key: 'merge.lastUsedPaths', value: paths });
+    
     if (replace) {
         rawFileTree = [];
         forcedPaths.clear();
     }
-    const currentPaths = [];
-    if (!replace) rawFileTree.forEach(item => currentPaths.push(item.path));
-    paths.forEach(p => {
-        if (!currentPaths.includes(p)) currentPaths.unshift(p);
-    }, true);
 
-    rawFileTree = [];
-    for (const p of [...currentPaths]) {
+    // Любой путь, переданный в эту функцию (выбранный вручную),
+    // --- теперь будет добавлен в список принудительного включения.
+    // --- Это гарантирует, что даже если пользователь выберет саму папку node_modules,
+    // --- она будет добавлена с галочкой.
+    paths.forEach(p => forcedPaths.add(p));
+    // Старая опция `forceInclude` теперь фактически не нужна, но мы оставим её для совместимости.
+
+    const removeNodeByPath = (nodes, pathToRemove) => {
+        const index = nodes.findIndex(node => node.path === pathToRemove);
+        if (index !== -1) {
+            nodes.splice(index, 1);
+            return true;
+        }
+        for (const node of nodes) {
+            if (node.children && removeNodeByPath(node.children, pathToRemove)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const newNodes = [];
+    for (const p of paths) {
+      if (!replace && findNodeByPath(rawFileTree, p)) {
+          removeNodeByPath(rawFileTree, p);
+      }
+
       const isDirectory = await window.api.isDirectory(p);
       if (isDirectory) {
         const result = await window.api.getDirectoryTree({ dirPath: p });
         if (result.success) {
           const rootNode = { name: p.split(/[\\/]/).pop(), path: p, type: 'dir', children: result.tree, checked: true, collapsed: false };
-          rawFileTree.push(rootNode);
+          newNodes.push(rootNode);
         }
       } else {
         const ext = '.' + p.split('.').pop().toLowerCase();
-        rawFileTree.push({ name: p.split(/[\\/]/).pop(), path: p, type: 'file', children: [], ext: ext, checked: true });
+        newNodes.push({ name: p.split(/[\\/]/).pop(), path: p, type: 'file', children: [], ext: ext, checked: true });
       }
-      if (forceInclude) forcedPaths.add(p);
     }
-    applyFiltersAndRender();
+
+    if (!isRestore) {
+        const markAsNew = (nodes) => {
+            for (const node of nodes) {
+                node.isNew = true;
+                if (node.children) {
+                    markAsNew(node.children);
+                }
+            }
+        };
+        markAsNew(newNodes);
+    }
+
+    if (replace) {
+        rawFileTree = newNodes;
+    } else {
+        rawFileTree.unshift(...newNodes);
+    }
+
+    const allFileNodes = getAllNodesRecursive(rawFileTree).filter(node => node.type === 'file' && node.lines === undefined);
+    const pathsToAnalyze = allFileNodes.map(node => node.path);
+
+    if (pathsToAnalyze.length > 0) {
+        const stats = await window.api.analyzeFiles(pathsToAnalyze);
+        const statsMap = new Map(stats.map(s => [s.path, s]));
+
+        allFileNodes.forEach(node => {
+            const stat = statsMap.get(node.path);
+            if (stat) {
+                node.lines = stat.lines;
+                node.size = stat.size;
+            }
+        });
+    }
+    
+    applyFiltersAndRender(options);
     showLoader(false);
-  };
+
+    window.api.setConfig({ key: 'merge.lastUsedPaths', value: rawFileTree.map(node => node.path) });
+    window.api.setConfig({ key: 'merge.forcedPaths', value: Array.from(forcedPaths) });
+
+    if (!isRestore) {
+        const checkedPaths = getAllNodesRecursive(rawFileTree)
+            .filter(n => n.checked)
+            .map(n => n.path);
+        window.api.setConfig({ key: 'merge.checkedPaths', value: checkedPaths });
+    }
+};
   
   init();
-});
 
+  // Поиск в дереве на вкладке "Сборка"
+
+const toggleMergeSearch = (forceClose = false) => {
+    const searchContainer = document.getElementById('merge-search-container');
+    const searchInput = document.getElementById('merge-search-input');
+
+    if (forceClose || searchContainer.style.display === 'flex') {
+        searchContainer.style.display = 'none';
+        clearSearchHighlight();
+    } else {
+        searchContainer.style.display = 'flex';
+        searchInput.focus();
+        searchInput.select();
+        handleSearchInTree(true, true); // Запускаем поиск при открытии
+    }
+};
+
+const clearSearchHighlight = () => {
+    document.querySelectorAll('.search-highlight').forEach(el => {
+        el.classList.remove('search-highlight');
+    });
+};
+
+const handleSearchInTree = (forward, fromStart = false) => {
+    const query = document.getElementById('merge-search-input').value.toLowerCase();
+    if (!query) {
+        clearSearchHighlight();
+        return;
+    }
+
+    // При новом поиске обновляем список результатов
+    if (fromStart || searchResults.length === 0) {
+        searchResults = getAllNodesRecursive(rawFileTree).filter(node => node.name.toLowerCase().includes(query));
+        currentSearchIndex = -1;
+    }
+
+    if (searchResults.length === 0) return;
+
+    clearSearchHighlight();
+
+    if (forward) {
+        currentSearchIndex++;
+        if (currentSearchIndex >= searchResults.length) {
+            currentSearchIndex = 0; // Переход по кругу
+        }
+    } else {
+        currentSearchIndex--;
+        if (currentSearchIndex < 0) {
+            currentSearchIndex = searchResults.length - 1; // Переход по кругу
+        }
+    }
+
+    const targetNode = searchResults[currentSearchIndex];
+    if (targetNode) {
+        const nodeElement = document.querySelector(`li.tree-item[data-path="${CSS.escape(targetNode.path)}"]`);
+        if (nodeElement) {
+            const nameSpan = nodeElement.querySelector(':scope > .tree-item-content > .name');
+            nameSpan.classList.add('search-highlight');
+            nodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+};
+
+// Конец поиска в дереве на вкладке "Сборка"
+
+// Привязываем кнопки панели поиска на вкладке "Сборка"
+(() => {
+    const prevBtn = document.getElementById('merge-search-prev');
+    const nextBtn = document.getElementById('merge-search-next');
+    const closeBtn = document.getElementById('merge-search-close');
+    const searchContainer = document.getElementById('merge-search-container');
+
+    if (prevBtn && !prevBtn.dataset.bound) {
+        prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSearchInTree(false);
+        });
+        prevBtn.dataset.bound = '1';
+    }
+
+    if (nextBtn && !nextBtn.dataset.bound) {
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSearchInTree(true);
+        });
+        nextBtn.dataset.bound = '1';
+    }
+
+    if (closeBtn && !closeBtn.dataset.bound) {
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMergeSearch(true);
+        });
+        closeBtn.dataset.bound = '1';
+    }
+
+    // Не прокручивать body, когда колесо крутят над панелью поиска
+    if (searchContainer && !searchContainer.dataset.wheelBound) {
+        const wheelHandler = (e) => {
+            e.preventDefault();
+            const list = document.getElementById('file-list-container');
+            if (list) list.scrollTop += e.deltaY;
+        };
+        searchContainer.addEventListener('wheel', wheelHandler, { passive: false });
+        searchContainer.dataset.wheelBound = '1';
+    }
+})();
+
+});

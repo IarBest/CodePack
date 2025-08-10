@@ -9,6 +9,58 @@
   --bg-color: #f4f6f9;
 }
 
+/* Темная тема: переопределения переменных и базовых цветов приложения */
+body.dark-theme {
+  --bg-color: #1b1f27;
+  --text-color: #e2e8f0;
+  --light-gray: #2a2f38;
+  --border-color: #3c4454;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Контейнер и базовые элементы в темной теме */
+body.dark-theme .container {
+  background: #1f2430;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+body.dark-theme .subtitle { color: #a0aec0; }
+body.dark-theme h1 { color: #e2e8f0; }
+
+/* Вкладки */
+body.dark-theme .tabs { border-bottom-color: var(--light-gray); }
+body.dark-theme .tab-btn { color: #a0aec0; }
+body.dark-theme .tab-btn:hover { color: var(--primary-color); }
+body.dark-theme .tab-btn.active { color: #e2e8f0; border-bottom-color: var(--primary-color); }
+
+/* Кнопки */
+body.dark-theme button {
+  background-color: #2c3440;
+  color: #e2e8f0;
+}
+body.dark-theme button:hover { background-color: #384152; }
+body.dark-theme button.primary-btn { background-color: var(--primary-color); color: #fff; }
+body.dark-theme button.primary-btn:hover { background-color: #2980b9; }
+
+/* Поля ввода и textarea */
+body.dark-theme input[type="text"],
+body.dark-theme textarea {
+  background-color: #1b2029;
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+body.dark-theme input[type="text"]:focus,
+body.dark-theme textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+}
+
+/* Дерево файлов и списки */
+body.dark-theme .file-list-container { background: #1b2029; }
+body.dark-theme .tree-item-content:hover { background-color: rgba(255, 255, 255, 0.06); }
+body.dark-theme .file-stats { color: #a0aec0; }
+
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-color);
@@ -122,7 +174,7 @@ input[type="text"]:focus, textarea:focus {
 /* Сборка */
 .merge-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 350px 1fr; /* Колонка стала шире */
   gap: 25px;
   overflow: hidden;
 }
@@ -181,6 +233,20 @@ input[type="text"]:focus, textarea:focus {
   border-color: var(--primary-color);
 }
 
+/* Кнопки, выстроенные в ряд */
+.button-row {
+  display: flex;
+  gap: 10px; /* Расстояние между кнопками */
+  margin-bottom: 10px; /* Расстояние между рядами */
+}
+.button-row:last-of-type {
+  margin-bottom: 0; /* Убираем нижний отступ у последнего ряда */
+}
+.button-row button {
+  flex-grow: 1; /* Кнопки занимают всю доступную ширину */
+  width: 0; /* Техническое свойство для правильной работы flex-grow */
+}
+
 .settings label {
   display: block;
   font-weight: 600;
@@ -233,6 +299,7 @@ input[type="text"]:focus, textarea:focus {
   border-radius: 6px;
   height: 280px;
   overflow: auto;
+  overscroll-behavior: contain; /* предотвращает прокрутку родителя при достижении края */
   padding: 10px;
   background: #fdfdfd;
 }
@@ -392,6 +459,17 @@ li.collapsed > ul { display: none; }
   margin-left: 5px;
 }
 
+/* Темная тема для быстрых галочек игнорирования */
+body.dark-theme .quick-ignore-settings {
+  background-color: #1b2029;
+  border-color: #3c4454;
+}
+body.dark-theme .quick-ignore-settings label { color: #e2e8f0; }
+body.dark-theme .quick-ignore-settings code {
+  background-color: #2a2f38;
+  color: #e2e8f0;
+}
+
 /* Иконка для сворачивания/разворачивания папок */
 .toggle-icon {
   width: auto; /* Автоматическая ширина */
@@ -445,25 +523,32 @@ li.collapsed > ul { display: none; }
   gap: 5px;
 }
 
+/* Кнопки "Развернуть/Свернуть" */
 .btn-tree-action {
-  background: none;
-  border: 1px solid var(--border-color);
-  color: var(--secondary-color);
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
   font-size: 0.8em;
   padding: 4px 8px;
   border-radius: 4px;
+  font-weight: 600; /* Добавим жирности, как у других кнопок */
+  transition: background-color 0.2s ease;
 }
+.btn-tree-action:hover {
+  background-color: #2980b9; /* Стандартный цвет для наведения */
+}
+
 .btn-tree-action:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
   background-color: #f0f8ff;
 }
 
-/* Новый блок для анимации "вырастания" */
+/* Анимация появления */
 #sticky-separator {
   /* Позиционирование */
   position: absolute;
-  bottom: 268px;
+  bottom: 300px;
   left: 1px;
   right: 17px;
   
@@ -494,7 +579,7 @@ li.collapsed > ul { display: none; }
   padding: 0; /* Убираем отступы, чтобы скрыть текст */
   font-size: 0; /* Прячем текст */
   background-color: #e0e0e0; /* Серый цвет для полоски */
-  border: 1px solid #c_c_c;
+  border: 1px solid #ccc;
 }
 
 /* При наведении мыши плавно возвращаем её к "полному" размеру */
@@ -549,7 +634,7 @@ li.collapsed > ul { display: none; }
 
 /* Стили для кнопок "Копировать" и "Сохранить" в дереве */
 .file-actions {
-  margin-left: auto; /* Прижимаем к правому краю */
+  margin-left: 10px;
   display: none; /* Прячем по умолчанию */
   gap: 8px;
   padding-right: 5px;
@@ -610,13 +695,13 @@ li.collapsed > ul { display: none; }
 
 .viewer-nav-buttons, .viewer-actions {
   display: flex;
-  gap: 5px;
+  gap: 2px;
 }
 
 .viewer-header button {
   background: none;
   border: 1px solid transparent;
-  padding: 4px 8px;
+  padding: 2px 4px;
   border-radius: 4px;
   font-size: 1.2em;
   line-height: 1;
@@ -689,13 +774,13 @@ li.collapsed > ul { display: none; }
 .viewer-toolbar .viewer-nav-buttons, 
 .viewer-toolbar .viewer-actions {
   display: flex;
-  gap: 5px;
+  gap: 2px;
 }
 
 .viewer-toolbar button {
   background: none;
   border: 1px solid transparent;
-  padding: 4px 8px;
+  padding: 2px 4px;
   border-radius: 4px;
   font-size: 1.2em;
   line-height: 1;
@@ -719,15 +804,11 @@ li.collapsed > ul { display: none; }
   z-index: 1000;
 }
 
-/* Старые стили больше не нужны, удаляем их */
-.viewer-file-path {
-  /* Все стили переехали в .viewer-header */
-}
+/* Совместимость со старыми стилями */
+.viewer-file-path { display: block; }
 
 /* Очищаем старый viewer-header, чтобы не было конфликтов */
-.viewer-header {
-  /* Переопределено выше */
-}
+.viewer-header { display: flex; }
 
 /* --- Стили для выбора языка в заголовке --- */
 .lang-selector-container {
@@ -813,6 +894,7 @@ li.collapsed > ul { display: none; }
   overflow: auto; /* Позволяем прокручивать весь код */
   padding: 0; /* Убираем внутренние отступы, чтобы редактор прилегал к краям */
   font-size: 14px; /* Базовый размер шрифта для редактора */
+  overscroll-behavior: contain;
 }
 
 .cm-editor .cm-scroller {
@@ -940,3 +1022,168 @@ body.light-theme .cm-search button:hover {
 body.no-scroll {
   overflow: hidden;
 }
+
+/* --- Стили для поиска в списке файлов на вкладке "Сборка" --- */
+.merge-preview {
+  position: relative; /* Это важно для позиционирования поиска */
+}
+
+.merge-search-container {
+  display: none; /* Изначально поиск скрыт */
+  align-items: center;
+  gap: 5px;
+  position: absolute;
+  bottom: 280px;
+  left: 0;
+  right: 0;
+  background-color: #f0f3f5;
+  padding: 8px;
+  border-top: 1px solid var(--border-color);
+  border-radius: 0 0 6px 6px;
+  z-index: 20; /* Чтобы быть поверх списка файлов */
+  overscroll-behavior: contain; /* предотвращает прокрутку родителя при колесе мыши */
+}
+
+.merge-search-container input {
+  flex-grow: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  outline: none;
+}
+.merge-search-container input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.merge-search-container button {
+  padding: 5px 10px;
+  font-size: 1em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Стиль для подсвеченного результата поиска */
+.tree-item .name.search-highlight {
+  background-color: #ffe082; /* Желтый фон */
+  border-radius: 3px;
+  padding: 1px 3px;
+  font-weight: bold;
+}
+
+body.dark-theme .merge-search-container {
+    background-color: #2c3440;
+    border-top: 1px solid #3c4454;
+}
+body.dark-theme .tree-item .name.search-highlight {
+    background-color: #f7b731;
+    color: #000;
+}
+
+/* renderer/style.css */
+
+/* --- Стили для колонок статистики в дереве файлов --- */
+.tree-item-content {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 2px 5px; /* Немного увеличим отступ справа */
+  border-radius: 4px;
+}
+
+.tree-item-content .name {
+  flex-grow: 1; /* Имя файла занимает всё свободное место */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Многоточие для длинных имен */
+}
+
+.file-stats {
+  display: flex;
+  margin-left: 10px; /* Отступ от имени файла */
+  flex-shrink: 0; /* Колонки не должны сжиматься */
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #7f8c8d;
+}
+
+.stat-lines, .stat-size {
+  width: 70px; /* Фиксированная ширина колонок */
+  text-align: right;
+}
+
+.tree-item.is-excluded .file-stats {
+  display: none; /* Не показывать статистику для исключенных */
+}
+
+/* --- Стили для блока с итоговой статистикой --- */
+.total-stats-container {
+  flex-grow: 1;
+}
+
+.total-stats-text {
+  font-size: 0.85em;
+  color: #7f8c8d;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* renderer/style.css */
+/* --- Стили для плавающей панели файлов --- */
+#viewer-file-panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(248, 249, 250, 0.9);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  max-height: 150px; /* Примерно 6-7 строк */
+  overflow-y: auto;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: move;
+  user-select: none;
+}
+
+body.dark-theme #viewer-file-panel {
+  background-color: rgba(40, 44, 52, 0.9);
+}
+
+.viewer-container.panel-hidden #viewer-file-panel {
+  opacity: 0;
+  transform: translateX(20px);
+  pointer-events: none;
+}
+
+#viewer-file-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 5px;
+}
+
+#viewer-file-panel-list li {
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: x-scroll;
+}
+
+#viewer-file-panel-list li.is-active {
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 600;
+}
+
+body.dark-theme #viewer-file-panel-list li:not(.is-active):hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+body:not(.dark-theme) #viewer-file-panel-list li:not(.is-active):hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+

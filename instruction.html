@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CodePack — Инструкция</title>
+  <style>
+    :root{--bg:#0b0c0f;--fg:#e7e9ee;--muted:#9aa3b2;--card:#12141a;--border:#1e2230;--accent:#4aa8ff;--ok:#31d0aa;--warn:#ffcc66}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    .wrap{max-width:940px;margin:40px auto 120px;padding:0 16px}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
+    h1{font-size:28px;line-height:1.2;margin:0 0 4px}
+    .sub{color:var(--muted);font-size:14px;margin:0 0 22px}
+    .panel{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .panel select,.panel button{background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+    .panel select:focus,.panel button:focus{outline:2px solid var(--accent)}
+
+    nav{position:sticky;top:0;background:linear-gradient(180deg,var(--bg),rgba(11,12,15,.94));backdrop-filter:saturate(120%) blur(6px);border-bottom:1px solid var(--border);z-index:2}
+    .toc{display:flex;flex-wrap:wrap;gap:12px;padding:10px 16px;max-width:940px;margin:0 auto}
+    .toc a{color:var(--muted);text-decoration:none;padding:6px 10px;border:1px solid var(--border);border-radius:999px}
+    .toc a:hover{color:var(--fg);border-color:var(--accent)}
+
+    section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 18px 6px;margin:14px 0}
+    h2{font-size:22px;margin:4px 0 12px}
+    h3{font-size:18px;margin:12px 0 8px}
+    p{margin:8px 0}
+    ul,ol{margin:6px 0 10px 22px}
+    code,pre,kbd{font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;font-size:.95em}
+    kbd{border:1px solid var(--border);border-bottom-color:#151923;background:#0f1117;color:#e6e8ed;border-radius:6px;padding:2px 6px;box-shadow:inset 0 -1px 0 #0b0f16}
+    table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border)}
+    th{background:#0f1218;text-align:left}
+    tr:last-child td{border-bottom:none}
+    .note{border-left:3px solid var(--accent);padding:8px 10px;background:#0f1117;border-radius:8px}
+    .ok{border-left-color:var(--ok)}
+    .warn{border-left-color:var(--warn)}
+    .placeholder{border:1px dashed var(--border);background:#0f1117;color:#8d96a7;border-radius:12px;padding:14px;text-align:center;margin:8px 0}
+
+    .lang-block{display:none}
+    .lang-block.active{display:block}
+    footer{color:var(--muted);font-size:13px;margin-top:32px}
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="toc">
+      <a href="#purpose">Назначение</a>
+      <a href="#ui">Интерфейс</a>
+      <a href="#merge">Сборка</a>
+      <a href="#split">Разборка</a>
+      <a href="#common">Общие элементы</a>
+      <a href="#shortcuts">Горячие клавиши</a>
+      <a href="#tips">Советы</a>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>📦 CodePack — инструкция</h1>
+        <p class="sub">Встроенная страница справки. Ниже можно переключить язык и распечатать.</p>
+      </div>
+      <div class="panel">
+        <label for="lang">Язык:</label>
+        <select id="lang" aria-label="Выбор языка">
+          <option value="ru" selected>Русский</option>
+          <option value="ro">Română</option>
+          <option value="en">English</option>
+        </select>
+        <button id="printBtn" title="Печать/Экспорт в PDF">Печать</button>
+      </div>
+    </header>
+
+    <!-- RU -->
+    <article class="lang-block active" id="lang-ru" lang="ru">
+      <section id="purpose">
+        <h2>1. Назначение</h2>
+        <p>CodePack собирает файлы проекта в один текстовый «пакет» и разбирает такой пакет обратно в файлы и папки. Удобно для передачи кода ИИ/коллегам и для резервных копий.</p>
+        <div class="note">
+          Формат устойчив к ошибкам — каждый файл обрамляется разделителями:
+          <pre><code>//======= FILE: путь/к/файлу =======
+... содержимое ...
+//======= END FILE =======</code></pre>
+        </div>
+      </section>
+
+      <section id="ui">
+        <h2>2. Интерфейс</h2>
+     <p>Две вкладки: <strong>Сборка</strong> (Merge) и <strong>Разборка</strong> (Split). Переключение вкладок — <kbd>Ctrl</kbd>+<kbd>Tab</kbd>.</p>
+      </section>
+
+      <section id="merge">
+        <h2>3. Вкладка «Сборка»</h2>
+        <h3>3.1 Выбор элементов</h3>
+        <ul>
+          <li><strong>Выбрать папку / Выбрать файл</strong> — <em>заменяет</em> текущий список выбранных.</li>
+          <li><strong>Добавить папку / Добавить файл</strong> — <em>добавляет</em> к списку; новые элементы появляются <em>сверху</em>.</li>
+          <li>Перетаскивание в окно <em>добавляет</em> элементы (не заменяет).</li>
+        </ul>
+        <h3>3.2 Дерево файлов</h3>
+        <ul>
+          <li>Иерархический список с чекбоксами у папок и файлов.</li>
+          <li>Сворачивание/разворачивание — кнопками <code>[+]</code> / <code>[-]</code> слева от иконки папки.</li>
+        </ul>
+        <h3>3.3 Фильтрация</h3>
+        <ul>
+          <li><strong>Расширения файлов</strong> работают в реальном времени: удалённые расширения уводят файлы в «исключённые», возвращённые — возвращают их на место <em>без автоматической установки галочек</em>.</li>
+          <li><strong>Игнорировать файлы и папки</strong> — аналогично, по имени/маске пути.</li>
+          <li><strong>Исключать <code>node_modules</code></strong> и <strong><code>user_data</code></strong> — включено по умолчанию (обычно это кеши и зависимости, не нужные для анализа кода).</li>
+        </ul>
+        <h3>3.4 Счётчики</h3>
+        <ul>
+          <li>В заголовке — количество отмеченных чекбоксом файлов.</li>
+          <li>Во время сборки в реальном времени подсчитываются строки и общий размер итогового файла.</li>
+        </ul>
+        <h3>3.5 Сохранение результата</h3>
+        <ul>
+          <li>Задайте путь и имя файла. При конфликте имени добавляется суффикс <code>(1)</code>, <code>(2)</code>, …</li>
+          <li>Опция «Закрывать по завершении» — завершить приложение после сборки.</li>
+        </ul>
+        <h3>3.6 Индикатор выполнения</h3>
+        <p>На время операции интерфейс блокируется и показывает «Обработка…».</p>
+      </section>
+
+      <section id="split">
+        <h2>4. Вкладка «Разборка»</h2>
+        <h3>4.1 Загрузка файла</h3>
+        <p>Вставьте текст пакета или выберите файл/перетащите его — дерево файлов строится автоматически.</p>
+        <h3>4.2 Работа с отдельными файлами</h3>
+        <ul>
+          <li><strong>Копировать содержимое</strong> — копирует <em>текущий просматриваемый</em> файл в буфер обмена.</li>
+          <li><strong>Сохранить как…</strong> — сохраняет только текущий файл на диск.</li>
+        </ul>
+        <h3>4.3 Разборка</h3>
+        <ul>
+          <li><strong>Разобрать выбранные файлы…</strong> — восстановить структуру на диске только для отмеченных галочкой.</li>
+          <li><strong>Пересобрать в файл…</strong> — собрать новый пакет из отмеченных.</li>
+        </ul>
+        <h3>4.4 Просмотрщик и миниокно</h3>
+        <ul>
+          <li>Полноэкранный режим — <kbd>Alt</kbd>+<kbd>Enter</kbd>, «во всё окно» — <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</li>
+          <li>В этих режимах доступно <em>миниокно списка файлов</em> (кнопка на панели или <kbd>Ctrl</kbd>+<kbd>E</kbd>): позволяет быстро перейти к нужному файлу.</li>
+          <li>Миниокно запоминает положение; если оно вышло за видимую область — при следующем запуске вернётся внутрь экрана.</li>
+        </ul>
+      </section>
+
+      <section id="common">
+        <h2>5. Общие элементы</h2>
+        <ul>
+          <li>Все настройки (пути, фильтры, чекбоксы, положение миниокон, исключения <code>node_modules</code>/<code>user_data</code>) сохраняются между сеансами.</li>
+          <li>Переключатель абсолютных/относительных путей в режиме «Сборка» (по умолчанию — относительные).</li>
+          <li>«Липкая» кнопка «Перейти к исключённым файлам ↓» остаётся на месте при прокрутке и раскрывается при наведении.</li>
+          <li>Поиски разные: во вкладке «Сборка» — по списку файлов; во вкладке «Разборка» — по содержимому файла.</li>
+        </ul>
+      </section>
+
+      <section id="shortcuts">
+        <h2>6. Горячие клавиши</h2>
+        <table>
+          <thead><tr><th>Клавиши</th><th>Действие</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Открыть файл</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>«Объединить» (вкладка Сборка) / «Разобрать выбранные…» (вкладка Разборка)</td></tr>
+            <tr><td><kbd>Enter</kbd></td><td>Если курсор <em>не</em> в поле поиска — «Объединить» (вкладка Сборка) / «Разобрать выбранные…» (вкладка Разборка)</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>PageUp</kbd></td><td>Предыдущий файл</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>PageDown</kbd></td><td>Следующий файл</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Поиск (тип зависит от вкладки)</td></tr>
+            <tr><td><kbd>Alt</kbd>+<kbd>Enter</kbd></td><td>Полноэкранный режим</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Во всё окно</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>Показать/скрыть миниокно списка файлов</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Выход из полноэкранного/всеоконного режима</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="tips">
+        <h2>7. Советы</h2>
+        <ul>
+          <li>Чтобы добавить пару файлов к уже выбранным — используйте «Добавить…» или перетаскивание.</li>
+          <li>Оставляйте исключение <code>node_modules</code> и <code>user_data</code> включённым, если не уверены, что они нужны.</li>
+          <li>После возврата расширений/исключений не забудьте вручную включить галочки у нужных файлов.</li>
+          <li>Для крупных проектов миниокно ускоряет навигацию.</li>
+        </ul>
+      </section>
+    </article>
+
+    <!-- RO -->
+    <article class="lang-block" id="lang-ro" lang="ro">
+      <section id="purpose-ro">
+        <h2>1. Scop</h2>
+        <p>CodePack adună fișierele unui proiect într-un singur fișier text și îl poate despacheta înapoi în dosare și fișiere. Util pentru trimitere la AI/coleghi și pentru backup.</p>
+        <div class="note">
+          Format rezistent la erori — fiecare fișier este încadrat de delimitatori:
+          <pre><code>//======= FILE: cale/către/fișier =======
+... conținut ...
+//======= END FILE =======</code></pre>
+        </div>
+      </section>
+      <section id="ui-ro">
+        <h2>2. Interfață</h2>
+        <p>Două file: <strong>Combinare</strong> și <strong>Separare</strong>. Comutați filele cu <kbd>Ctrl</kbd>+<kbd>Tab</kbd>.</p>
+      </section>
+      <section id="merge-ro">
+        <h2>3. „Combinare”</h2>
+        <h3>3.1 Selectare</h3>
+        <ul>
+          <li><strong>Selectați dosar / fișier</strong> — <em>înlocuiește</em> lista curentă.</li>
+          <li><strong>Adăugați dosar / fișier</strong> — <em>adaugă</em> elemente; apar <em>sus</em> în listă.</li>
+          <li>Glisarea în fereastră <em>adaugă</em> elemente (nu înlocuiește).</li>
+        </ul>
+        <h3>3.2 Arbore</h3>
+        <ul>
+          <li>Listă ierarhică cu bife.</li>
+          <li>Expandare/restrângere — <code>[+]</code> / <code>[-]</code>.</li>
+        </ul>
+        <h3>3.3 Filtrare</h3>
+        <ul>
+          <li><strong>Extensii fișiere</strong> în timp real — la eliminare trec în „excluse”, la revenire reapar <em>fără bifa</em>.</li>
+          <li><strong>Ignorați fișiere și dosare</strong> — după nume/mască cale.</li>
+          <li><strong>Exclude <code>node_modules</code></strong> și <strong><code>user_data</code></strong> — activ implicit.</li>
+        </ul>
+        <h3>3.4 Contoare</h3>
+        <ul>
+          <li>Numărul de fișiere bifate în antet.</li>
+          <li>În timpul combinării: număr de linii și dimensiune totală în timp real.</li>
+        </ul>
+        <h3>3.5 Salvare</h3>
+        <ul>
+          <li>Nume și cale; la conflict se adaugă <code>(1)</code>, <code>(2)</code>…</li>
+          <li>„Închide la finalizare” — închide aplicația după combinare.</li>
+        </ul>
+        <h3>3.6 Indicator</h3>
+        <p>Interfața este blocată și se afișează „Procesare…” în timpul operației.</p>
+      </section>
+      <section id="split-ro">
+        <h2>4. „Separare”</h2>
+        <h3>4.1 Încărcare</h3>
+        <p>Inserare text sau alegere fișier; arborele se construiește automat.</p>
+        <h3>4.2 Fișiere individuale</h3>
+        <ul>
+          <li><strong>Copiați conținut</strong> — copiază <em>fișierul vizualizat</em> în clipboard.</li>
+          <li><strong>Salvați ca…</strong> — salvează doar fișierul curent.</li>
+        </ul>
+        <h3>4.3 Separare</h3>
+        <ul>
+          <li><strong>Separați fișierele selectate…</strong> — recreează structura pe disc.</li>
+          <li><strong>Reconstruiți într-un fișier…</strong> — pachet nou din cele bifate.</li>
+        </ul>
+        <h3>4.4 Vizualizator & mini-fereastră</h3>
+        <ul>
+          <li>Ecran complet — <kbd>Alt</kbd>+<kbd>Enter</kbd>; fereastră completă — <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</li>
+          <li>Mini-fereastră listă (buton sau <kbd>Ctrl</kbd>+<kbd>E</kbd>) — salt rapid la fișier; reține poziția, revine în zona vizibilă dacă este în afara ecranului.</li>
+        </ul>
+      </section>
+      <section id="common-ro">
+        <h2>5. Elemente comune</h2>
+        <ul>
+          <li>Setările (căi, filtre, bife, poziții mini-ferestre) se păstrează între sesiuni.</li>
+          <li>Căi absolute/relative în „Combinare” (implicit relative).</li>
+          <li>Buton fix „Mergi la fișiere excluse ↓”.</li>
+          <li>Căutări diferite: în „Combinare” — în listă; în „Separare” — în conținut.</li>
+        </ul>
+      </section>
+      <section id="shortcuts-ro">
+        <h2>6. Scurtături</h2>
+        <table>
+          <thead><tr><th>Taste</th><th>Acțiune</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Deschide fișier</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td> „Combinare” / „Separă selectatele…”</td></tr>
+            <tr><td><kbd>Enter</kbd></td><td>Dacă nu e în câmpul de căutare — „Combinare” / „Separă selectatele…”</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>PageUp</kbd></td><td>Fișierul precedent</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>PageDown</kbd></td><td>Fișierul următor</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Căutare (în funcție de filă)</td></tr>
+            <tr><td><kbd>Alt</kbd>+<kbd>Enter</kbd></td><td>Ecran complet</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Fereastră completă</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>Mini-fereastra listă</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Ieșire din mod</td></tr>
+          </tbody>
+        </table>
+      </section>
+      <section id="tips-ro">
+        <h2>7. Sfaturi</h2>
+        <ul>
+          <li>Pentru a adăuga rapid câteva fișiere — „Adăugați…” sau glisare.</li>
+          <li>Lăsați `node_modules` și `user_data` excluse dacă nu sunt necesare.</li>
+          <li>După revenirea extensiilor/excluderilor, bifați manual fișierele necesare.</li>
+          <li>Mini-fereastra este utilă în proiecte mari.</li>
+        </ul>
+      </section>
+    </article>
+
+    <!-- EN -->
+    <article class="lang-block" id="lang-en" lang="en">
+      <section id="purpose-en">
+        <h2>1. Purpose</h2>
+        <p>CodePack bundles project files into a single text package and unpacks such a package back to folders/files. Handy for sharing with AI/colleagues and for backups.</p>
+        <div class="note">
+          Error‑proof format — each file is wrapped by delimiters:
+          <pre><code>//======= FILE: path/to/file =======
+... contents ...
+//======= END FILE =======</code></pre>
+        </div>
+      </section>
+      <section id="ui-en">
+        <h2>2. Interface</h2>
+     <p>Two tabs: <strong>Merge</strong> and <strong>Split</strong>. Switch tabs with <kbd>Ctrl</kbd>+<kbd>Tab</kbd>.</p>
+      </section>
+      <section id="merge-en">
+        <h2>3. “Merge” tab</h2>
+        <h3>3.1 Selecting items</h3>
+        <ul>
+          <li><strong>Select folder / file</strong> — <em>replaces</em> the current list.</li>
+          <li><strong>Add folder / file</strong> — <em>adds</em> items; new ones appear <em>on top</em>.</li>
+          <li>Drag‑and‑drop <em>adds</em> items (does not replace).</li>
+        </ul>
+        <h3>3.2 File tree</h3>
+        <ul>
+          <li>Hierarchical list with checkboxes.</li>
+          <li>Expand/collapse via <code>[+]</code> / <code>[-]</code> buttons.</li>
+        </ul>
+        <h3>3.3 Filtering</h3>
+        <ul>
+          <li><strong>File extensions</strong> in real time — removed ones go to excluded, re‑added ones return <em>without auto‑ticking</em>.</li>
+          <li><strong>Ignore files/folders</strong> — by name/path mask.</li>
+          <li><strong>Exclude <code>node_modules</code></strong> and <strong><code>user_data</code></strong> — on by default.</li>
+        </ul>
+        <h3>3.4 Counters</h3>
+        <ul>
+          <li>Header shows the number of checked files.</li>
+          <li>While merging, line count and total size are calculated in real time.</li>
+        </ul>
+        <h3>3.5 Saving</h3>
+        <ul>
+          <li>Choose path/name; on conflict appends <code>(1)</code>, <code>(2)</code>, …</li>
+          <li>“Close on complete” — quit the app after merging.</li>
+        </ul>
+        <h3>3.6 Progress</h3>
+        <p>UI is locked and shows “Processing…” during the operation.</p>
+      </section>
+      <section id="split-en">
+        <h2>4. “Split” tab</h2>
+        <h3>4.1 Loading</h3>
+        <p>Paste the package text or pick/drag a file — the tree is built automatically.</p>
+        <h3>4.2 Single‑file actions</h3>
+        <ul>
+          <li><strong>Copy content</strong> — copies the <em>currently viewed</em> file to clipboard.</li>
+          <li><strong>Save as…</strong> — saves only the current file.</li>
+        </ul>
+        <h3>4.3 Splitting</h3>
+        <ul>
+          <li><strong>Split selected files…</strong> — restore structure on disk for checked items only.</li>
+          <li><strong>Rebuild to file…</strong> — create a new package from checked items.</li>
+        </ul>
+        <h3>4.4 Viewer & mini window</h3>
+        <ul>
+          <li>Fullscreen — <kbd>Alt</kbd>+<kbd>Enter</kbd>; full window — <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</li>
+          <li>Mini file list (toolbar button or <kbd>Ctrl</kbd>+<kbd>E</kbd>): quick jump to any file; remembers position and returns to visible area if off‑screen.</li>
+        </ul>
+      </section>
+      <section id="common-en">
+        <h2>5. Common elements</h2>
+        <ul>
+          <li>Settings (paths, filters, checkboxes, mini window positions) persist across sessions.</li>
+          <li>Absolute/relative path switch in Merge (default: relative).</li>
+          <li>Sticky “Go to excluded files ↓” button.</li>
+          <li>Different searches: Merge — in file list; Split — in file contents.</li>
+        </ul>
+      </section>
+      <section id="shortcuts-en">
+        <h2>6. Shortcuts</h2>
+        <table>
+          <thead><tr><th>Keys</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Open file</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>“Merge” (Merge tab) / “Split selected…” (Split tab)</td></tr>
+            <tr><td><kbd>Enter</kbd></td><td>If not in search field — “Merge” (Merge tab) / “Split selected…” (Split tab)</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>PageUp</kbd></td><td>Previous file</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>PageDown</kbd></td><td>Next file</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Search (varies by tab)</td></tr>
+            <tr><td><kbd>Alt</kbd>+<kbd>Enter</kbd></td><td>Fullscreen</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Full window</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>Toggle mini file list</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Exit fullscreen/full window</td></tr>
+          </tbody>
+        </table>
+      </section>
+      <section id="tips-en">
+        <h2>7. Tips</h2>
+        <ul>
+          <li>Use “Add…” or drag‑and‑drop to append a few files.</li>
+          <li>Keep <code>node_modules</code> and <code>user_data</code> excluded unless required.</li>
+          <li>After re‑adding extensions/removing from ignore, tick the needed files manually.</li>
+          <li>Mini window is great for large projects.</li>
+        </ul>
+      </section>
+    </article>
+
+    <footer>
+      <p>© Iaroslav "Iar Best" Vișnevschii — CodePack Help. Вы можете встроить этот файл в окно справки Electron. Кнопка «Печать» позволяет сохранить в PDF.</p>
+    </footer>
+  </div>
+
+  <script>
+    const select = document.getElementById('lang');
+    const printBtn = document.getElementById('printBtn');
+    const blocks = {
+      ru: document.getElementById('lang-ru'),
+      ro: document.getElementById('lang-ro'),
+      en: document.getElementById('lang-en')
+    };
+    function setLang(val){
+      Object.values(blocks).forEach(b=>b.classList.remove('active'));
+      (blocks[val]||blocks.ru).classList.add('active');
+      document.documentElement.lang = val;
+      select.value = val;
+    }
+    // Определяем язык из query (?lang=ru|ro|en) или из браузера
+    const params = new URLSearchParams(location.search);
+    const qLang = params.get('lang');
+    const initial = ['ru','ro','en'].includes(qLang) ? qLang : (navigator.language||'').slice(0,2);
+    setLang(['ru','ro','en'].includes(initial) ? initial : 'ru');
+
+    select.addEventListener('change', e=> setLang(e.target.value));
+    printBtn.addEventListener('click', ()=> window.print());
+  </script>
+</body>
+</html>
