@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('api', {
   onTriggerOpen: (callback) => ipcRenderer.on('trigger-open', callback),
 
   // Управление приложением
+  openExternalLink: (url) => ipcRenderer.send('app:open-external', url),
   quitApp: () => ipcRenderer.send('app:quit'),
   toggleFullScreen: () => ipcRenderer.invoke('window:toggle-fullscreen')
 });

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, clipboard, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, clipboard, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -44,6 +44,7 @@ function t(key, replacements = {}) {
 let Store;
 let mainWindow;
 let helpWindow;
+let aboutWindow;
 
 import('electron-store').then(storeModule => {
   Store = storeModule.default;
@@ -147,14 +148,7 @@ function createMenu(store, win) {
             { type: 'separator' },
             {
                 label: t('menu_about'),
-                click: () => {
-                    dialog.showMessageBox(win, {
-                        type: 'info',
-                        title: t('about_title'),
-                        message: t('about_message'),
-                        detail: t('about_detail')
-                    });
-                }
+                click: () => openAboutWindow()
             }
         ]
     }
@@ -182,6 +176,31 @@ function createMenu(store, win) {
     helpWindow.loadFile('instruction.html', { query: { lang } });
     helpWindow.on('closed', () => { helpWindow = null; });
   }
+
+function openAboutWindow() {
+  if (aboutWindow && !aboutWindow.isDestroyed()) {
+    aboutWindow.focus();
+    return;
+  }
+  aboutWindow = new BrowserWindow({
+    width: 400,
+    height: 520,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    title: 'О программе',
+    parent: mainWindow,
+    modal: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      sandbox: false
+    }
+  });
+  aboutWindow.loadFile('renderer/about.html');
+  aboutWindow.setMenu(null); // Убираем меню у этого окна
+  aboutWindow.on('closed', () => { aboutWindow = null; });
+}
 
 function initializeApp(store) {
   const createWindow = () => {
@@ -528,5 +547,9 @@ ipcMain.handle('files:merge', async (_, options) => {
       console.error(`Error saving file: ${filePath}`, error);
       return { success: false, error: error.message };
     }
+  });
+
+  ipcMain.on('app:open-external', (_, url) => {
+    shell.openExternal(url);
   });
 }

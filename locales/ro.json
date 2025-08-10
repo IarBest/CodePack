@@ -91,9 +91,6 @@
   "year_suffix": "",
   "months": ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"],
   "flag_file": "ro.png",
-  "about_title": "Despre CodePack",
-  "about_message": "CodePack v1.2.0",
-  "about_detail": "Un instrument la îndemână pentru împachetarea și desfacerea codului atunci când lucrați cu AI (și nu numai).\n\nCreat cu Electron.",
   "add_timestamp_label": "Adăugați data și ora la numele fișierului",
   "filename_comment_label": "Comentariu pentru numele fișierului:",
   "filename_comment_placeholder": "De exemplu, 'refactorizare v2'",
@@ -113,5 +110,16 @@
   "choose_folder_btn": "Selectați dosar(e)",
   "choose_files_btn": "Selectați fișier(e)",
   "add_folder_btn": "Adăugați dosar(e)",
-  "add_files_btn": "Adăugați fișier(e)"
+  "add_files_btn": "Adăugați fișier(e)",
+  "about_new_title": "Despre CodePack",
+  "about_version": "Versiune: v1.2.0",
+  "about_author_label": "Autor:",
+  "about_author_name": "Iaroslav “Iar Best” Vișnevschii",
+  "about_license_label": "Licență:",
+  "about_license_text": "Gratuit; copierea și modificările sunt permise cu condiția indicării sursei originale (Iaroslav “Iar Best” Vișnevschii / iarbest.ru). Utilizează Electron și CodeMirror.",
+  "about_description_p1": "Programul este complet gratuit și este primul meu program - am încercat să gândesc fiecare element. Dacă ceva nu funcționează sau credeți că poate fi îmbunătățit, vă rog să-mi scrieți un e-mail.",
+  "about_description_p2": "Dacă aveți dorința și posibilitatea, mă puteți mulțumi transferând orice sumă. Chiar și o jumătate de dolar mă va face puțin mai fericit și mai recunoscător 🙂 Dar acest lucru nu este deloc obligatoriu - programul este gratuit ;)",
+  "about_btn_repo": "Site / Repozitoriu",
+  "about_btn_email": "Trimite un e-mail",
+  "about_btn_donate": "Susține autorul"
 }

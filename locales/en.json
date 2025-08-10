@@ -82,9 +82,6 @@
   "menu_theme": "Theme",
   "menu_theme_light": "Light",
   "menu_theme_dark": "Dark",
-  "about_title": "About CodePack",
-  "about_message": "CodePack v1.2.0",
-  "about_detail": "A handy tool for packing and unpacking code when working with AI (and more).\n\nCreated with Electron.",
   "lang_selector_label": "Interface language ▼",
   "flag_file": "en.png",
   "menu_format": "Date Format",
@@ -113,5 +110,16 @@
   "choose_folder_btn": "Choose folder(s)",
   "choose_files_btn": "Choose file(s)",
   "add_folder_btn": "Add folder(s)",
-  "add_files_btn": "Add file(s)"
+  "add_files_btn": "Add file(s)",
+  "about_new_title": "About CodePack",
+  "about_version": "Version: v1.2.0",
+  "about_author_label": "Author:",
+  "about_author_name": "Iaroslav “Iar Best” Vișnevschii",
+  "about_license_label": "License:",
+  "about_license_text": "Free; copying and modifications are allowed provided the original source is indicated (Iaroslav “Iar Best” Vișnevschii / iarbest.ru). Uses Electron and CodeMirror.",
+  "about_description_p1": "The program is completely free and it's my first one - I tried to think through every element. If something doesn't work or you think it can be improved, please email me.",
+  "about_description_p2": "If you have the desire and ability, you can thank me by transferring any amount. Even half a dollar will make me a little happier and more grateful 🙂 But this is not at all necessary - the program is free ;)",
+  "about_btn_repo": "Website / Repository",
+  "about_btn_email": "Send an email",
+  "about_btn_donate": "Support the author"
 }
